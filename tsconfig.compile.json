@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ESNext",
+    "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "sourceMap": true
+  },
+  "files": [
+    "./compile.ts"
+  ]
+}

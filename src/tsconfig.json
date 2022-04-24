@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
+    "strict": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "outDir": "./../dist",
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "paths": {
+      "@core/*": [
+        "./core/*"
+      ],
+      "@arana/pool/base/*": [
+        "modules/arana/pool/base/*"
+      ],
+      "@arana/pool/history/*": [
+        "modules/arana/pool/history/*"
+      ],
+      "@arana/utils/*": [
+        "modules/arana/utils/*"
+      ],
+      "@modules/*": [
+        "./modules/*"
+      ],
+      "@classes": [
+        "./core/classes"
+      ]
+    },
+    "plugins": [
+      {
+        "transform": "@zerollup/ts-transform-paths"
+      }
+    ]
+  },
+  "files": [
+    "./core/index.ts",
+    "./core/scalars.d.ts"
+  ],
+  "include": [
+    "./core/generated/*.json",
+    "./modules/**/*.ts"
+  ]
+}
