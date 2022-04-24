@@ -2,14 +2,16 @@ import cors from "cors";
 import express from "express";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
+import * as path from "path";
 import { GraphQLBoolean, GraphQLFieldResolver, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLNullableType, GraphQLObjectType, GraphQLOutputType, GraphQLScalarType, GraphQLSchema, GraphQLString, GraphQLType } from "graphql";
 import classes, { init } from "./classes";
 import { Schema, SchemaOutputType } from "./schema";
+import { __core } from "@paths";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("source-map-support").install();
 
-const schema = JSON.parse(fs.readFileSync("generated/schema.json", "utf-8")) as Schema;
+const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 
 function array(type: GraphQLType) {
   return new GraphQLList(type);

@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import * as tts from "typescript";
+import * as tts from "ttypescript";
 import { Schema, SchemaArgument, SchemaOutputType, SchemaType } from "./src/core/schema";
 
 const __src = path.resolve("src");
@@ -218,7 +218,7 @@ program.getSourceFiles().forEach(sourceFile => {
   if (sourceFile.fileName.includes("core/generated/schema.json")) {
     const text = JSON.stringify(types, null, 2);
     const newSourceFile = ts.parseJsonText(sourceFile.fileName, text);
-    ts.bindSourceFile(newSourceFile, options.options);
+    tts.bindSourceFile(newSourceFile, options.options);
 
     replaceSourceFile(sourceFile, newSourceFile);
   }
@@ -229,7 +229,7 @@ program.emit();
 function replaceSourceFile(sourceFile: Writeable<ts.SourceFile>, newSourceFile: ts.SourceFile) {
   sourceFile.statements = newSourceFile.statements;
   sourceFile.endOfFileToken = newSourceFile.endOfFileToken;
-  ts.setTextRangePosWidth(sourceFile, 0, newSourceFile.text.length);
+  tts.setTextRangePosWidth(sourceFile, 0, newSourceFile.text.length);
   sourceFile.text = newSourceFile.text;
   sourceFile.flags = newSourceFile.flags;
   sourceFile.nodeCount = newSourceFile.nodeCount;

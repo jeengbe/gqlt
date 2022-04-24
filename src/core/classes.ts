@@ -1,6 +1,8 @@
+import { __core } from "@paths";
 import * as fs from "fs";
+import * as path from "path";
 import { Schema, SchemaType } from "./schema";
-const schema = JSON.parse(fs.readFileSync("generated/schema.json", "utf-8")) as Schema;
+const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 
 const filesMap: Record<string, any> = {};
 export async function init() {

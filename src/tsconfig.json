@@ -10,6 +10,9 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "paths": {
+      "@paths": [
+        "./paths"
+      ],
       "@core/*": [
         "./core/*"
       ],
