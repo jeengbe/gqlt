@@ -15,7 +15,7 @@ export function scan(options: ts.CreateProgramOptions): Schema {
 
   // Collect Scalars
   for (const sourceFile of moduleSourceFiles) {
-    if (!sourceFile.isDeclarationFile || !sourceFile.fileName.startsWith(path.resolve(__src, "modules"))) continue;
+    if (!sourceFile.isDeclarationFile || !path.normalize(sourceFile.fileName).startsWith(path.resolve(__src, "modules"))) continue;
 
     for (const aliasDeclaration of sourceFile.statements.filter(ts.isTypeAliasDeclaration)) {
       const scalarName = aliasDeclaration.name.text;
@@ -44,8 +44,7 @@ export function scan(options: ts.CreateProgramOptions): Schema {
 
   // Collect Types
   for (const sourceFile of moduleSourceFiles.filter(isModuleApiSourceFile)) {
-
-    const fileName = sourceFile.fileName.substring((__src + "/modules/").length, sourceFile.fileName.length - 3).replace(/\\/g, "/");
+    const fileName = path.normalize(sourceFile.fileName).substring((__src + "/modules/").length, path.normalize(sourceFile.fileName).length - 3).replace(/\\/g, "/");
 
     for (const classDeclaration of sourceFile.statements.filter(ts.isClassDeclaration).filter(isNodeExported)) {
       const typeName = classDeclaration.name?.text;
