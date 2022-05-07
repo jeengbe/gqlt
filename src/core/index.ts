@@ -1,12 +1,12 @@
+import { __core } from "@paths";
 import cors from "cors";
 import express from "express";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
-import * as path from "path";
 import { GraphQLBoolean, GraphQLFieldResolver, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLNullableType, GraphQLObjectType, GraphQLOutputType, GraphQLScalarType, GraphQLSchema, GraphQLString, GraphQLType } from "graphql";
+import * as path from "path";
 import classes, { init } from "./classes";
 import { Schema, SchemaOutputType } from "./schema";
-import { __core } from "@paths";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("source-map-support").install();
@@ -95,7 +95,6 @@ init().then(() => {
         query: types["Query"],
       }),
       rootValue: new classes["Query"](),
-      graphiql: true,
       customFormatErrorFn: (error) => {
         console.log(error);
         return error;
@@ -103,5 +102,5 @@ init().then(() => {
     }),
   );
 
-  app.listen(4000);
+  app.listen(3000);
 });

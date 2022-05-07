@@ -2,19 +2,19 @@ import * as path from "path";
 import ts from "typescript";
 import type { Schema, SchemaArgument, SchemaOutputType, SchemaType } from "../src/core/schema";
 import { __src } from "./compile";
-import { getModuleApiSourceFiles } from "./utils";
+import { isModuleApiSourceFile, isNodeModule, not } from "./utils";
 
 export function scan(options: ts.CreateProgramOptions): Schema {
   const program = ts.createProgram(options);
 
   const checker = program.getTypeChecker();
 
-  const moduleApiSourceFiles = getModuleApiSourceFiles(program.getSourceFiles());
+  const [, ...moduleSourceFiles] = program.getSourceFiles().filter(not(isNodeModule));
 
   const types: Schema = {};
 
   // Collect Scalars
-  for (const sourceFile of moduleApiSourceFiles) {
+  for (const sourceFile of moduleSourceFiles) {
     if (!sourceFile.isDeclarationFile || !sourceFile.fileName.startsWith(path.resolve(__src, "modules"))) continue;
 
     for (const aliasDeclaration of sourceFile.statements.filter(ts.isTypeAliasDeclaration)) {
@@ -43,7 +43,8 @@ export function scan(options: ts.CreateProgramOptions): Schema {
   }
 
   // Collect Types
-  for (const sourceFile of moduleApiSourceFiles) {
+  for (const sourceFile of moduleSourceFiles.filter(isModuleApiSourceFile)) {
+
     const fileName = sourceFile.fileName.substring((__src + "/modules/").length, sourceFile.fileName.length - 3).replace(/\\/g, "/");
 
     for (const classDeclaration of sourceFile.statements.filter(ts.isClassDeclaration).filter(isNodeExported)) {

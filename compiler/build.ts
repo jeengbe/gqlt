@@ -7,15 +7,14 @@ export function build(options: Omit<ts.CreateProgramOptions, "host">, types: Sch
   const host = ts.createCompilerHost(options.options);
   const realReadFile = host.readFile.bind(host);
 
+  const typesRegex = new RegExp(`new (${Object.keys(types).join("|")})`, "g");
+
   host.readFile = (fileName: string) => {
     if (fileName.endsWith("core/generated/schema.json")) {
       return JSON.stringify(types, null, 2);
     } else if (isModuleApiFile(fileName)) {
       let content = realReadFile(fileName);
-
-      for (const type in types) {
-        content = content?.replace(new RegExp(`new ${type}`, "g"), `new __classes.${type}`);
-      }
+      content = content?.replace(typesRegex, `new __classes.$1`);
 
       return `import __classes from "@classes";
 ${content}`;
@@ -26,8 +25,6 @@ ${content}`;
 
   const program = ts.createProgram({ ...options, host });
   const checker = program.getTypeChecker();
-
-  // const { factory } = ts;
 
   program.emit(
     undefined,

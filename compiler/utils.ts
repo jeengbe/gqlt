@@ -36,7 +36,3 @@ export function getModuleYmlPath(sourceFileName: string): string | false {
   if (fs.existsSync(moduleYmlPath)) return moduleYmlPath;
   return getModuleYmlPath(dir);
 }
-
-export function getModuleApiSourceFiles(sourceFiles: readonly ts.SourceFile[]): ts.SourceFile[] {
-  return sourceFiles.filter(and(not(isNodeModule), isModuleApiSourceFile));
-}
