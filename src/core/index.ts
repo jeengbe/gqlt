@@ -94,6 +94,7 @@ init().then(() => {
       schema: new GraphQLSchema({
         query: types["Query"],
       }),
+      graphiql: true,
       rootValue: new classes["Query"](),
       customFormatErrorFn: (error) => {
         console.log(error);

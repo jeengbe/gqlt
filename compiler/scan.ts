@@ -2,7 +2,7 @@ import * as path from "path";
 import ts from "typescript";
 import type { Schema, SchemaArgument, SchemaOutputType, SchemaType } from "../src/core/schema";
 import { __src } from "./compile";
-import { isModuleApiSourceFile, isNodeModule, not } from "./utils";
+import { isModuleApiSourceFile, isNodeModule, not, or } from "./utils";
 
 export function scan(options: ts.CreateProgramOptions): Schema {
   const program = ts.createProgram(options);
@@ -46,8 +46,9 @@ export function scan(options: ts.CreateProgramOptions): Schema {
   for (const sourceFile of moduleSourceFiles.filter(isModuleApiSourceFile)) {
     const fileName = path.normalize(sourceFile.fileName).substring((__src + "/modules/").length, path.normalize(sourceFile.fileName).length - 3).replace(/\\/g, "/");
 
-    for (const classDeclaration of sourceFile.statements.filter(ts.isClassDeclaration).filter(isNodeExported)) {
-      const typeName = classDeclaration.name?.text;
+    for (const node of sourceFile.statements.filter(or(ts.isClassDeclaration, ts.isInterfaceDeclaration)).filter(isNodeExported)) {
+      const classOrInterfaceDeclaration = node as ts.ClassDeclaration | ts.InterfaceDeclaration;
+      const typeName = classOrInterfaceDeclaration.name?.text;
       if (typeName === undefined) continue;
 
       if (!(typeName in types)) {
@@ -55,18 +56,18 @@ export function scan(options: ts.CreateProgramOptions): Schema {
           kind: "type",
           name: typeName,
           fields: {},
-          description: getNodeDescription(classDeclaration),
+          description: getNodeDescription(classOrInterfaceDeclaration),
           from: [fileName]
         };
       } else {
         const type = types[typeName];
         if (type.kind === "scalar") throw new Error(`Type "${typeName}" is already defined as a scalar type`);
-        if (getNodeDescription(classDeclaration) !== "") throw new Error(`Type "${typeName}" already has a description`);
+        if (getNodeDescription(classOrInterfaceDeclaration) !== "") throw new Error(`Type "${typeName}" already has a description`);
         if (!type.from.includes(fileName)) type.from.push(fileName);
       }
       const type = types[typeName] as SchemaType;
 
-      for (const member of classDeclaration.members.filter(m => ts.isMethodDeclaration(m) || ts.isGetAccessor(m))) {
+      for (const member of (classOrInterfaceDeclaration.members as ts.NodeArray<ts.ClassElement | ts.TypeElement>).filter(m => ts.isMethodDeclaration(m) || ts.isGetAccessor(m))) {
         const fieldName = (member.name as ts.Identifier)?.text;
         if (fieldName in type.fields) {
           throw new Error(`Field "${fieldName}" is already defined in type "${typeName}"`);
