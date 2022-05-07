@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "r-g": "nodemon -w dist dist/core/index.js",
     "w-c": "tsc -w -p compiler/tsconfig.json",
-    "r-c": "nodemon -w compiler -w src compiler/compile.js"
+    "r-c": "nodemon -w compiler -w src -e ts,json compiler/compile.js",
+    "r-g": "nodemon -w dist -w json,js dist/core/index.js"
   },
   "dependencies": {
     "arangojs": "^7.7.0",

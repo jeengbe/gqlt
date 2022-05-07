@@ -17,4 +17,16 @@ export class Query {
 
     return data ? new Module(data) : null;
   }
+
+  /**
+   * Get all modules
+   */
+  async modules(): Promise<Module[]> {
+    const data = await query<IModule>(aql`
+      FOR module IN modules
+        RETURN module
+    `);
+
+    return data.map((module) => new Module(module));
+  }
 }
