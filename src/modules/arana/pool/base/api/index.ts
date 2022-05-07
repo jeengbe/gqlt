@@ -1,4 +1,3 @@
-import __classes from "@classes";
 import { query } from "@core/database";
 import { aql } from "arangojs";
 import type { IModule } from "../models";
@@ -16,6 +15,6 @@ export class Query {
         RETURN module
     `).first();
 
-    return data ? new __classes.Module(data) : null;
+    return data ? new Module(data) : null;
   }
 }

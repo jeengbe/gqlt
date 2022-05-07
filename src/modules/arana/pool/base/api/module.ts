@@ -1,5 +1,4 @@
 import type { VersionString } from "@arana/utils/scalars";
-import __classes from "@classes";
 import { query } from "@core/database";
 import { Type } from "@core/utils";
 import { aql } from "arangojs";
@@ -40,7 +39,7 @@ export class Module extends Type<IModule> {
   async dependencies(): Promise<ModuleDependency[]> {
     const cursor = await query<{
       dependency: IModule;
-      version: string;
+      version: VersionString;
     }>(aql`
       FOR dependency, edge IN 1..1 OUTBOUND ${this.data._id} dependencies
         RETURN {
@@ -49,7 +48,7 @@ export class Module extends Type<IModule> {
         }
     `);
     return (await cursor.all()).map(
-      ({ dependency, version }) => new __classes.ModuleDependency({ module: this, dependency, version })
+      ({ dependency, version }) => new ModuleDependency({ module: this, dependency, version })
     );
   }
 }
@@ -63,7 +62,7 @@ export class ModuleDependency extends Type<{
    * The required module
    */
   get module(): Module {
-    return new __classes.Module(this.data.dependency);
+    return new Module(this.data.dependency);
   }
 
   /**

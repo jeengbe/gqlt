@@ -1,5 +1,4 @@
 import { Timestamp, VersionString } from "@arana/utils/scalars";
-import __classes from "@classes";
 import { Type } from "@core/utils";
 import type { IModule, IModuleHistoryEntry } from "../models";
 
@@ -8,7 +7,7 @@ export class Module extends Type<IModule> {
    * The version history of the module
    */
   get history(): ModuleHistoryEntry[] {
-    return this.data.history.map(entry => new __classes.ModuleHistoryEntry(entry));
+    return this.data.history.map(entry => new ModuleHistoryEntry(entry));
   }
 }
 
