@@ -13,11 +13,11 @@ require("source-map-support").install();
 
 const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 
-function array(type: GraphQLType) {
+function array<T extends GraphQLType>(type: T) {
   return new GraphQLList(type);
 }
 
-function nonNull(type: GraphQLNullableType) {
+function nonNull<T extends GraphQLNullableType>(type: T) {
   return new GraphQLNonNull(type);
 }
 
