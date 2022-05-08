@@ -30,3 +30,13 @@ export class Query {
     return data.map((module) => new Module(module));
   }
 }
+
+export class Mutation {
+  /**
+   * Create a new module
+   * @param path The path of the module
+   */
+  createModule(path: string) {
+    console.log(path)
+  }
+}

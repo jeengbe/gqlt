@@ -82,7 +82,7 @@ export function scan(options: ts.CreateProgramOptions): Schema {
       }
       const type = types[typeName] as SchemaType;
 
-      for (const member of (classOrInterfaceDeclaration.members as ts.NodeArray<ts.ClassElement | ts.TypeElement>).filter(m => ts.isMethodDeclaration(m) || ts.isGetAccessor(m))) {
+      for (const member of (classOrInterfaceDeclaration.members as ts.NodeArray<ts.ClassElement | ts.TypeElement>).filter(m => ts.isMethodDeclaration(m) || ts.isGetAccessor(m) || ts.isPropertySignature(m))) {
         const fieldName = (member.name as ts.Identifier)?.text;
         if (fieldName in type.fields) {
           throw new Error(`Field "${fieldName}" is already defined in type "${typeName}"`);
@@ -192,9 +192,10 @@ function getTypeNodeOutputType(type: ts.TypeNode, isNullable = false): SchemaOut
 
     case ts.SyntaxKind.UnionType:
       const unionType = type as ts.UnionTypeNode;
-      if (unionType.types.length === 2 && unionType.types.filter(isNullLiteral).length === 1) {
-        return getTypeNodeOutputType(unionType.types.find(t => !isNullLiteral(t))!, true);
+      if (unionType.types.length === 2 && unionType.types.filter(or(isNullLiteral, isUndefined)).length === 1) {
+        return getTypeNodeOutputType(unionType.types.find(not(or(isNullLiteral, isUndefined)))!, true);
       }
+      throw new Error("Union types are not supported!");
 
     case ts.SyntaxKind.VoidKeyword:
       return nonNull({
@@ -220,4 +221,8 @@ function nonNull<T extends SchemaOutputType>(type: T, isNullable: boolean) {
 
 function isNullLiteral(type: ts.TypeNode) {
   return type.kind === ts.SyntaxKind.LiteralType && (type as ts.LiteralTypeNode).literal.kind === ts.SyntaxKind.NullKeyword;
+}
+
+function isUndefined (type: ts.TypeNode) {
+  return type.kind === ts.SyntaxKind.UndefinedKeyword;
 }

@@ -47,28 +47,24 @@ export class Module extends Type<IModule> {
           version: edge.version
         }
     `);
+
     return (await cursor.all()).map(
-      ({ dependency, version }) => new ModuleDependency({ module: this, dependency, version })
+      ({ dependency, version }) => ({
+        module: new Module(dependency),
+        version
+      })
     );
   }
 }
 
-export class ModuleDependency extends Type<{
-  module: Module;
-  dependency: IModule;
-  version: VersionString;
-}> {
+export interface ModuleDependency {
   /**
    * The required module
    */
-  get module(): Module {
-    return new Module(this.data.dependency);
-  }
+  module: Module;
 
   /**
    * The minimum required version of the module
    */
-  get version(): VersionString {
-    return this.data.version;
-  }
+  version: VersionString;
 }

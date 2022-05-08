@@ -2,28 +2,6 @@ import { Timestamp, VersionString } from "@arana/utils/scalars";
 import { Type } from "@core/utils";
 import type { IModule } from "../models";
 
-export interface ModuleHistoryEntry {
-  /**
-   * The version the history entry describes
-   */
-  get version(): VersionString;
-
-  /**
-   * Changes
-   */
-  get changelog(): string[];
-
-  /**
-   * Authors of this version
-   */
-  get authors(): string[];
-
-  /**
-   * The date this version was released
-   */
-  get releaseDate(): Timestamp;
-}
-
 export class Module extends Type<IModule> {
   /**
    * The version history of the module
@@ -36,4 +14,26 @@ export class Module extends Type<IModule> {
       releaseDate: entry.releaseDate,
     }));
   }
+}
+
+export interface ModuleHistoryEntry {
+  /**
+   * The version the history entry describes
+   */
+  version: VersionString;
+
+  /**
+   * Changes
+   */
+  changelog: string[];
+
+  /**
+   * Authors of this version
+   */
+  authors: string[];
+
+  /**
+   * The date this version was released
+   */
+  releaseDate: Timestamp;
 }
