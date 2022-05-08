@@ -16,6 +16,15 @@ const options: ts.CreateProgramOptions = {
   host: ts.createCompilerHost(tsconfig.options)
 };
 
+performance.mark("scan:start");
 const types = scan(options);
-
+performance.mark("scan:end");
+performance.mark("build:start");
 build(options, types, tsconfigPath);
+performance.mark("build:end");
+
+const perfScan = performance.measure("scan", "scan:start", "scan:end")
+const perfBuild =  performance.measure("build", "build:start", "build:end")
+console.log("Build:", perfScan.duration.toFixed(2), "ms");
+console.log("Compile:", perfBuild.duration.toFixed(2), "ms");
+console.log("Total:", (perfBuild.duration + perfScan.duration).toFixed(2), "ms");

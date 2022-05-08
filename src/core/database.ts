@@ -4,11 +4,11 @@ import type { ArrayCursor } from "arangojs/cursor";
 import type { QueryOptions } from "arangojs/database";
 
 export const db = new Database({
-  url: "http://localhost:8529",
+  url: "http://arangodb_db_container:8529",
   databaseName: "_system"
 });
 
-db.useBasicAuth("root", "3e8M@uy§'PFZ2PU_");
+db.useBasicAuth("root", "ultraSecureJesperPasswort!");
 
 type Response<R> = Promise<ArrayCursor<R>> & {
   first(): Promise<R | undefined>;

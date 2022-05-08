@@ -1,7 +1,7 @@
 {
   "scripts": {
     "w-c": "tsc -w -p compiler/tsconfig.json",
-    "r-c": "nodemon -w compiler -w src -e ts,json compiler/compile.js",
+    "r-c": "nodemon -w build -w src -e js,json build/compile.js",
     "r-g": "nodemon -w dist -w json,js dist/core/index.js"
   },
   "dependencies": {
