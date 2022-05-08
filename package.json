@@ -1,8 +1,8 @@
 {
   "scripts": {
     "w-c": "tsc -w -p compiler/tsconfig.json",
-    "r-c": "nodemon -w build -w src -e js,json build/compile.js",
-    "r-g": "nodemon -w dist -w json,js dist/core/index.js"
+    "r-c": "nodemon -w build -e js,json build/compile.js",
+    "r-g": "nodemon -w dist -e json,js -d 0.2 dist/core/index.js"
   },
   "dependencies": {
     "arangojs": "^7.7.0",
@@ -16,6 +16,7 @@
     "@types/glob": "^7.2.0",
     "@types/ts-expose-internals": "npm:ts-expose-internals@4.6.0-beta",
     "glob": "^7.2.0",
+    "nodemon": "^2.0.16",
     "source-map-support": "^0.5.21",
     "tsc-alias": "^1.6.7",
     "typescript": "^4.6.3"
