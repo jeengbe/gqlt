@@ -5,6 +5,12 @@ import { scan } from "./scan";
 
 export const __src = path.resolve("src");
 
+const formatHost: ts.FormatDiagnosticsHost = {
+  getCanonicalFileName: path => path,
+  getCurrentDirectory: ts.sys.getCurrentDirectory,
+  getNewLine: () => ts.sys.newLine
+};
+
 // Prepare config
 const tsconfigPath = path.resolve(__src, "tsconfig.json");
 const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, ts.sys as unknown as ts.ParseConfigFileHost)!;
@@ -16,15 +22,5 @@ const options: ts.CreateProgramOptions = {
   host: ts.createCompilerHost(tsconfig.options)
 };
 
-performance.mark("scan:start");
 const types = scan(options);
-performance.mark("scan:end");
-performance.mark("build:start");
-build(options, types, tsconfigPath);
-performance.mark("build:end");
-
-const perfScan = performance.measure("scan", "scan:start", "scan:end")
-const perfBuild =  performance.measure("build", "build:start", "build:end")
-console.log("Build:", perfScan.duration.toFixed(2), "ms");
-console.log("Compile:", perfBuild.duration.toFixed(2), "ms");
-console.log("Total:", (perfBuild.duration + perfScan.duration).toFixed(2), "ms");
+build(options, types, tsconfigPath, tsconfig, formatHost);
