@@ -5,7 +5,7 @@ import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
 import { GraphQLBoolean, GraphQLFieldResolver, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLNullableType, GraphQLObjectType, GraphQLOutputType, GraphQLScalarType, GraphQLSchema, GraphQLString, GraphQLType } from "graphql";
 import * as path from "path";
-import classes, { init } from "./classes";
+import { init, root } from "./classes";
 import { Schema, SchemaOutputType } from "./schema";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -38,7 +38,11 @@ const types = {
   integer: GraphQLInt,
   float: GraphQLFloat,
   boolean: GraphQLBoolean,
-  id: GraphQLID
+  id: GraphQLID,
+  void: new GraphQLScalarType({
+    name: "Void",
+    description: "The `Void` scalar is used to indicate that a mutation returns nothing. It is returned as `null`."
+  })
 } as Record<string, any>;
 
 function convertType(type: SchemaOutputType): GraphQLOutputType {
@@ -93,9 +97,10 @@ init().then(() => {
     graphqlHTTP({
       schema: new GraphQLSchema({
         query: types["Query"],
+        mutation: types["Mutation"]
       }),
       graphiql: true,
-      rootValue: new classes["Query"](),
+      rootValue: root,
       customFormatErrorFn: (error) => {
         console.log(error);
         return error;

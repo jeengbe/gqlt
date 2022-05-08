@@ -11,7 +11,22 @@ export function scan(options: ts.CreateProgramOptions): Schema {
 
   const [, ...moduleSourceFiles] = program.getSourceFiles().filter(not(isNodeModule));
 
-  const types: Schema = {};
+  const types: Schema = {
+    Query: {
+      kind: "type",
+      name: "Query",
+      description: "The root query type",
+      fields: {},
+      from: []
+    },
+    Mutation: {
+      kind: "type",
+      name: "Mutation",
+      description: "The root mutation type",
+      fields: {},
+      from: []
+    }
+  };
 
   // Collect Scalars
   for (const sourceFile of moduleSourceFiles) {
@@ -130,57 +145,70 @@ export function scan(options: ts.CreateProgramOptions): Schema {
 }
 
 function getTypeNodeOutputType(type: ts.TypeNode, isNullable = false): SchemaOutputType {
-  if ([ts.SyntaxKind.StringLiteral, ts.SyntaxKind.StringKeyword].includes(type.kind)) {
-    // `String` scalar
-    return nonNull({
-      kind: "type",
-      name: "string",
-    }, isNullable);
+  switch (type.kind) {
+    // case ts.SyntaxKind.StringLiteral:
+    case ts.SyntaxKind.StringKeyword:
+      // `String` scalar
+      return nonNull({
+        kind: "type",
+        name: "string",
+      }, isNullable);
+
+    // case ts.SyntaxKind.TrueKeyword:
+    // case ts.SyntaxKind.FalseKeyword:
+    case ts.SyntaxKind.BooleanKeyword:
+      // `Boolean` scalar
+      return nonNull({
+        kind: "type",
+        name: "boolean"
+      }, isNullable);
+
+    // case ts.SyntaxKind.NumericLiteral:
+    case ts.SyntaxKind.NumberKeyword:
+      // JavaScript `number` is ambiguous as it could both be `Float` or `Integer`
+      throw new Error("Number literals are not supported! Use `integer` or `float` from `@core/scalars` instead.");
+
+    case ts.SyntaxKind.FunctionType:
+      // Resolve function return types
+      return getTypeNodeOutputType((type as ts.FunctionOrConstructorTypeNode).type);
+
+    case ts.SyntaxKind.TypeReference:
+      // We have a type reference
+      const typeReference = type as ts.TypeReferenceNode;
+      if ((typeReference.typeName as ts.Identifier).text === "Promise") {
+        // If the type is a promise, resolve the promise's type
+        return getTypeNodeOutputType(typeReference.typeArguments![0]);
+      }
+      return nonNull({
+        kind: "type",
+        name: (typeReference.typeName as ts.Identifier).text,
+      }, isNullable);
+
+    case ts.SyntaxKind.ArrayType:
+      return nonNull({
+        kind: "array",
+        of: getTypeNodeOutputType((type as ts.ArrayTypeNode).elementType)
+      }, isNullable);
+
+    case ts.SyntaxKind.UnionType:
+      const unionType = type as ts.UnionTypeNode;
+      if (unionType.types.length === 2 && unionType.types.filter(isNullLiteral).length === 1) {
+        return getTypeNodeOutputType(unionType.types.find(t => !isNullLiteral(t))!, true);
+      }
+
+    case ts.SyntaxKind.VoidKeyword:
+      return nonNull({
+        kind: "type",
+        name: "void"
+      }, true);
+
+    default:
+      console.error(type);
+      throw new Error(`Unsupported type: ${ts.SyntaxKind[type.kind]}`);
   }
-  if ([ts.SyntaxKind.TrueKeyword, ts.SyntaxKind.FalseKeyword, ts.SyntaxKind.BooleanKeyword].includes(type.kind)) {
-    // `Boolean` scalar
-    return nonNull({
-      kind: "type",
-      name: "boolean"
-    }, isNullable);
-  }
-  if ([ts.SyntaxKind.NumericLiteral, ts.SyntaxKind.NumberKeyword].includes(type.kind)) {
-    // JavaScript `number` is ambiguous as it could both be `Float` or `Integer`
-    throw new Error("Number literals are not supported! Use `integer` or `float` from `@core/scalars` instead.");
-  }
-  if (type.kind === ts.SyntaxKind.FunctionType) {
-    // Resolve function return types
-    return getTypeNodeOutputType((type as ts.FunctionOrConstructorTypeNode).type);
-  }
-  if (type.kind === ts.SyntaxKind.TypeReference) {
-    // We have a type reference
-    const typeReference = type as ts.TypeReferenceNode;
-    if ((typeReference.typeName as ts.Identifier).text === "Promise") {
-      // If the type is a promise, resolve the promise's type
-      return getTypeNodeOutputType(typeReference.typeArguments![0]);
-    }
-    return nonNull({
-      kind: "type",
-      name: (typeReference.typeName as ts.Identifier).text,
-    }, isNullable);
-  }
-  if (type.kind === ts.SyntaxKind.ArrayType) {
-    return nonNull({
-      kind: "array",
-      of: getTypeNodeOutputType((type as ts.ArrayTypeNode).elementType)
-    }, isNullable);
-  }
-  if (type.kind === ts.SyntaxKind.UnionType) {
-    const unionType = type as ts.UnionTypeNode;
-    if (unionType.types.length === 2 && unionType.types.filter(isNullLiteral).length === 1) {
-      return getTypeNodeOutputType(unionType.types.find(t => !isNullLiteral(t))!, true);
-    }
-  }
-  console.error(type);
-  throw new Error(`Unsupported type: ${ts.SyntaxKind[type.kind]}`);
 }
 
-function nonNull<T>(type: T, isNullable: boolean) {
+function nonNull<T extends SchemaOutputType>(type: T, isNullable: boolean) {
   if (isNullable) {
     return type;
   }

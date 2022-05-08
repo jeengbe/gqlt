@@ -1,10 +1,13 @@
 import { __core } from "@paths";
 import * as fs from "fs";
 import * as path from "path";
-import { Schema, SchemaType } from "./schema";
+import type { RootType, Schema, SchemaType } from "./schema";
 const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 
 const filesMap: Record<string, any> = {};
+const rootInstances: Record<string, any> = {};
+const rootTypes: RootType[] = ["Query", "Mutation"];
+
 export async function init() {
   for (const type of Object.values(schema)) {
     if (type.kind === "type") {
@@ -15,9 +18,12 @@ export async function init() {
       }
     }
   }
+  for (const type of rootTypes) {
+    rootInstances[type] = new classes[type]();
+  }
 }
 
-export default new Proxy({}, {
+const classes = new Proxy({}, {
   get(_, name) {
     if (typeof name !== "string") return null;
     if (!(name in schema)) return null;
@@ -45,3 +51,17 @@ export default new Proxy({}, {
     };
   }
 }) as any;
+
+export const root = new Proxy({}, {
+  get(_, name) {
+    if (typeof name !== "string") return null;
+    for (const option of rootTypes) {
+      if (name in schema[option].fields) {
+        return rootInstances[option][name];
+      }
+    }
+    return null;
+  }
+});
+
+export default classes;

@@ -1,4 +1,5 @@
-export type Schema = Record<string, SchemaType | SchemaScalar>;
+export type RootType = "Query" | "Mutation";
+export type Schema = Record<string, SchemaType | SchemaScalar> & Record<RootType, SchemaType>;
 
 export interface SchemaScalar {
   kind: "scalar";
