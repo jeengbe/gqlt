@@ -3,7 +3,7 @@ import ts from "typescript";
 import type { Schema } from "../src/core/schema";
 import { isModuleApiFile } from "./utils";
 
-export function build(options: Omit<ts.CreateProgramOptions, "host">, types: Schema, tsconfigPath: string, tsconfig: ts.ParsedCommandLine, formatHost: ts.FormatDiagnosticsHost) {
+export function build(types: Schema, tsconfigPath: string, tsconfig: ts.ParsedCommandLine, formatHost: ts.FormatDiagnosticsHost) {
   const host = ts.createWatchCompilerHost(
     tsconfigPath,
     tsconfig.options,

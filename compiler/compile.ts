@@ -23,4 +23,4 @@ const options: ts.CreateProgramOptions = {
 };
 
 const types = scan(options);
-build(options, types, tsconfigPath, tsconfig, formatHost);
+build(types, tsconfigPath, tsconfig, formatHost);

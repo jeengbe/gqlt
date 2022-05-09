@@ -45,5 +45,8 @@
   "include": [
     "./core/generated/*.json",
     "./modules/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
   ]
 }
