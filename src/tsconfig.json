@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "outDir": "./../dist",
     "resolveJsonModule": true,
+    "experimentalDecorators": true,
     "sourceMap": true,
     "paths": {
       "@paths": [
