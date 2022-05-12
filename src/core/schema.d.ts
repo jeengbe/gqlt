@@ -6,6 +6,7 @@ export interface SchemaScalar {
   name: string;
   description?: string;
   type: SchemaOutputType;
+  from: string;
 }
 
 export interface SchemaType {
