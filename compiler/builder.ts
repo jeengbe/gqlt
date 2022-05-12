@@ -1,6 +1,6 @@
 import { replaceTscAliasPaths } from "tsc-alias";
 import ts from "typescript";
-import { Scanner, UpdateResult } from "./scanner";
+import { ScanError, Scanner, UpdateResult } from "./scanner";
 import { isModuleApiFile } from "./utils";
 
 interface FilePresentOnHost {
@@ -98,8 +98,17 @@ ${content}`;
 
   protected afterProgramCreate(...args: Parameters<Exclude<typeof this.oldAfterProgramCreate, undefined>>) {
     if (this.watch) {
-
-      const result = Math.max(...this.updatedFiles.map(args[0].getSourceFile.bind(args[0])).map(this.scanner.refreshTypes.bind(this.scanner)), UpdateResult.NOTHING);
+      let result;
+      try {
+        result = Math.max(...this.updatedFiles.map(args[0].getSourceFile.bind(args[0])).map(this.scanner.refreshTypes.bind(this.scanner)), UpdateResult.NOTHING);
+      } catch (e) {
+        if (e instanceof ScanError) {
+          console.log(`Error '${e.message}' for type '${e.typeName}' in '${e.fileName}'.`);
+          return;
+        } else {
+          throw e;
+        }
+      }
       this.updatedFiles = [];
 
       this.invalidateModuleApiFiles(result);

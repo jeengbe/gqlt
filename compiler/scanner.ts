@@ -1,6 +1,6 @@
 import ts from "typescript";
-import type { Schema, SchemaArgument, SchemaOutputType, SchemaType } from "../src/core/schema";
-import { getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "./utils";
+import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../src/core/schema";
+import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "./utils";
 
 export enum UpdateResult {
   /**
@@ -78,39 +78,26 @@ export class Scanner {
 
   protected scanScalars() {
     for (const sourceFile of this.sourceFiles) {
-      this.updateScalars(sourceFile, false);
+      this.updateScalars(sourceFile);
     }
   }
 
-  protected updateScalars(sourceFile: ts.SourceFile, replace = true): UpdateResult {
+  protected updateScalars(sourceFile: ts.SourceFile): UpdateResult {
     if (!sourceFile.isDeclarationFile) return UpdateResult.NOTHING;
     if (!isModuleFile(sourceFile.fileName)) return UpdateResult.NOTHING;
 
-    let result = UpdateResult.NOTHING;
     const moduleFileName = getModuleScopeFileName(sourceFile.fileName);
+    const scalars: Record<string, SchemaScalar> = {};
 
     for (const aliasDeclaration of sourceFile.statements.filter(ts.isTypeAliasDeclaration)) {
       const scalarName = aliasDeclaration.name.text;
-
-      if (scalarName in this.types) {
-        // Only bother if not replacing or origins don't match
-        if (!replace || this.types[scalarName].from !== moduleFileName) {
-          throw new Error(`Duplicate scalar name: ${scalarName}`);
-        }
-      } else {
-        if (replace) {
-          // We found a new scalar
-          result = UpdateResult.FULL;
-        }
-      }
-
       const type = aliasDeclaration.type;
       if (!ts.isTypeReferenceNode(type)) continue;
       // TODO: Check for actual symbol
       if (!ts.isIdentifier(type.typeName) || type.typeName.text !== "Scalar") continue;
 
       try {
-        this.types[scalarName] = {
+        scalars[scalarName] = {
           kind: "scalar",
           name: scalarName,
           description: this.nodeUtils.getNodeDescription(aliasDeclaration),
@@ -118,8 +105,43 @@ export class Scanner {
           from: moduleFileName
         };
       } catch (e) {
-        console.error(`Error while parsing scalar ${scalarName} in ${sourceFile.fileName}:`);
-        throw e;
+        console.error(e);
+        throw new ScanError(null, moduleFileName, scalarName);
+      }
+    }
+
+    let result = UpdateResult.NOTHING;
+    const oldScalars: Record<string, SchemaScalar> = {};
+
+    for (const [scalarName, scalar] of Object.entries(this.types)) {
+      if (scalar.kind === "scalar" && scalar.from === moduleFileName) {
+        delete this.types[scalarName];
+        oldScalars[scalarName] = scalar;
+      }
+    }
+
+    for (const scalarName in scalars) {
+      const scalar = scalars[scalarName];
+
+      if (scalarName in this.types) {
+        throw new ScanError(`Duplicate scalar name`, moduleFileName, scalarName);
+      }
+
+      if (!areTypesEqual(Object.entries(oldScalars).find(([oldScalarName]) => oldScalarName === scalarName)?.[1], scalar)) {
+        result = UpdateResult.SCHEMA;
+      }
+
+      this.types[scalarName] = scalar;
+    }
+
+    if (Object.keys(oldScalars).length !== Object.keys(scalars).length) {
+      result = UpdateResult.FULL;
+    } else {
+      for (const scalar in scalars) {
+        if (!(scalar in oldScalars)) {
+          result = UpdateResult.FULL;
+          break;
+        }
       }
     }
 
@@ -128,15 +150,15 @@ export class Scanner {
 
   protected scanTypes() {
     for (const sourceFile of this.sourceFiles) {
-      this.updateTypes(sourceFile, false);
+      this.updateTypes(sourceFile);
     }
   }
 
-  protected updateTypes(sourceFile: ts.SourceFile, replace = true): UpdateResult {
+  protected updateTypes(sourceFile: ts.SourceFile): UpdateResult {
     if (!isModuleApiFile(sourceFile.fileName)) return UpdateResult.NOTHING;
 
-    let result = UpdateResult.NOTHING;
     const moduleFileName = getModuleScopeFileName(sourceFile.fileName);
+    const types: Record<string, SchemaType> = {};
 
     for (const node of sourceFile.statements) {
       if (!(ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node))) continue;
@@ -146,47 +168,20 @@ export class Scanner {
       const typeName = classOrInterfaceDeclaration.name?.text;
       if (!typeName) continue;
 
-      if (typeName in this.types) {
-        const type = this.types[typeName];
-        if (!replace) {
-          if (type.kind === "scalar") {
-            throw new Error(`Type "${typeName}" is already defined as a scalar type`);
-          }
-          if (this.nodeUtils.getNodeDescription(classOrInterfaceDeclaration) !== "") {
-            throw new Error(`Type "${typeName}" already has a description`);
-          }
-          if (!type.from.includes(moduleFileName)) {
-            type.from.push(moduleFileName);
-          }
-        } else {
-          result = UpdateResult.SCHEMA;
-        }
-      } else {
-        this.types[typeName] = {
-          kind: "type",
-          name: typeName,
-          fields: {},
-          description: this.nodeUtils.getNodeDescription(classOrInterfaceDeclaration),
-          from: [moduleFileName]
-        };
+      types[typeName] = {
+        kind: "type",
+        name: typeName,
+        fields: {},
+        description: this.nodeUtils.getNodeDescription(classOrInterfaceDeclaration),
+        from: [moduleFileName]
+      };
 
-        result = UpdateResult.FULL;
-      }
-      const type = this.types[typeName] as SchemaType;
+      const type = types[typeName] as SchemaType;
 
       for (const member of classOrInterfaceDeclaration.members) {
         if (!(ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isPropertySignature(member))) continue;
         if (!ts.isIdentifier(member.name)) continue;
         const fieldName = member.name.text;
-        if (fieldName in type.fields) {
-          if (!replace || type.fields[fieldName].resolve.from !== moduleFileName) {
-            throw new Error(`Field "${fieldName}" is already defined in type "${typeName}"`);
-          }
-        } else {
-          if (replace) {
-            result = UpdateResult.FULL;
-          }
-        }
 
         try {
           type.fields[fieldName] = {
@@ -216,9 +211,92 @@ export class Scanner {
             }
           };
         } catch (e) {
-          console.error(`Error while parsing field "${fieldName}" in "${typeName}" in ${sourceFile.fileName}:`);
-          throw e;
+          console.error(e);
+          throw new ScanError(null, moduleFileName, typeName);
         }
+      }
+    }
+
+    let result = UpdateResult.NOTHING;
+    const updatedTypes: string[] = [];
+
+    for (const [typeName, oldType] of Object.entries(this.types)) {
+      if (oldType.kind !== "type") continue;
+
+      if (!(typeName in types)) {
+        if (!oldType.from.includes(moduleFileName)) continue;
+
+        result = UpdateResult.FULL;
+        // Type is removed from file
+        if (oldType.from.length === 1) {
+          delete this.types[typeName];
+          continue;
+        }
+
+        // Remove all references to file
+        Object.assign(oldType, {
+          from: oldType.from.filter(f => f !== moduleFileName),
+          fields: Object.entries(oldType.fields).reduce((fields, [fieldName, field]) => {
+            if (field.resolve.from === moduleFileName) return fields;
+            fields[fieldName] = field;
+
+            return fields;
+          }, {} as typeof oldType.fields)
+        });
+      } else {
+        // Update types
+        const type = types[typeName];
+        const updatedFields: string[] = [];
+
+        // Update old fields
+        Object.assign(oldType, {
+          description: type.description,
+          fields: Object.entries(oldType.fields).reduce((fields, [fieldName, oldField]) => {
+            if (fieldName in type.fields) {
+              const field = type.fields[fieldName];
+
+              if (oldField.resolve.from !== moduleFileName) {
+                throw new ScanError(`Field is already defined`, moduleFileName, fieldName);
+              }
+              if (!areTypesEqual(oldField, field)) {
+                result = Math.max(result, UpdateResult.SCHEMA);
+                oldField = field;
+              }
+              if (fieldName in type.fields) {
+                fields[fieldName] = oldField;
+              }
+            } else {
+              if (oldField.resolve.from !== moduleFileName) {
+                fields[fieldName] = oldField;
+              }
+            }
+            updatedFields.push(fieldName);
+            return fields;
+          }, {} as typeof oldType.fields)
+        });
+
+        // Push new fields
+        Object.assign(oldType.fields, Object.entries(type.fields).reduce((fields, [fieldName, field]) => {
+          if (updatedFields.includes(fieldName)) return fields;
+          fields[fieldName] = field;
+          result = Math.max(result, UpdateResult.SCHEMA);
+          return fields;
+        }, {} as typeof oldType.fields));
+
+        if (updatedFields.length || Object.keys(type.fields).length) {
+          Object.assign(oldType, {
+            from: oldType.from.includes(moduleFileName) ? oldType.from : [...oldType.from, moduleFileName]
+          });
+        }
+
+        updatedTypes.push(typeName);
+      }
+    }
+
+    for (const typeName in types) {
+      if (!updatedTypes.includes(typeName)) {
+        result = UpdateResult.FULL;
+        this.types[typeName] = types[typeName];
       }
     }
 
@@ -253,7 +331,6 @@ class NodeUtils {
 
     return this.getTypeNodeOutputType(typeNode);
   }
-
 
   getTypeNodeOutputType(type: ts.TypeNode, isNullable = false): SchemaOutputType {
     switch (type.kind) {
@@ -336,5 +413,23 @@ class NodeUtils {
 
   isUndefined(type: ts.TypeNode) {
     return type.kind === ts.SyntaxKind.UndefinedKeyword;
+  }
+}
+
+export class ScanError extends Error {
+  constructor(
+    message: string | null,
+    private _fileName: string,
+    private _typeName: string
+  ) {
+    super(message ?? undefined);
+  }
+
+  get fileName() {
+    return this._fileName;
+  }
+
+  get typeName() {
+    return this._typeName;
   }
 }

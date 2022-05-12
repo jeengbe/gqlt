@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import ts from "typescript";
+import { SchemaArgument, SchemaField, SchemaOutputType, SchemaScalar, SchemaType } from "../src/core/schema";
 import { __src } from "./compile";
 
 export function not<Args extends any[]>(predicate: (...args: Args) => boolean) {
@@ -43,5 +44,21 @@ export function isModuleFile(fileName: string) {
 }
 
 export function getModuleScopeFileName(fileName: string) {
-  return path.normalize(fileName).substring((__src + "/modules/").length, path.normalize(fileName).length - 3).replace(/\\/g, "/");
+  return path.normalize(fileName).substring((__src + "/modules/").length, path.normalize(fileName).length - (fileName.endsWith(".d.ts") ? 5 : 3)).replace(/\\/g, "/");
+}
+
+type CompareSchemaType = SchemaType | SchemaScalar | SchemaField | SchemaOutputType | SchemaArgument;
+type CompareType = string | boolean | number | CompareSchemaType | undefined;
+
+export function areTypesEqual(typeA: CompareType, typeB: CompareType): boolean {
+  if (typeA === typeB) return true;
+  if (typeA === undefined || typeB === undefined) return false;
+  if (["string", "boolean", "number"].includes(typeof typeA)) return false;
+  if (["string", "boolean", "number"].includes(typeof typeB)) return false;
+  const a = typeA as CompareSchemaType;
+  const b = typeB as CompareSchemaType;
+  if (a.kind !== b.kind) return false;
+
+  // Type-wise, this is absolute bs as it merely covers a fraction of all possible combinations. Nevertheless, works in runtime
+  return (Object.keys(a) as (keyof typeof a)[]).every(key => areTypesEqual(a[key], b[key]));
 }
