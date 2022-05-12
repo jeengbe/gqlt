@@ -1,0 +1,15 @@
+diff --git a/node_modules/typescript/lib/typescript.js b/node_modules/typescript/lib/typescript.js
+index 3be91a8..f51e983 100644
+--- a/node_modules/typescript/lib/typescript.js
++++ b/node_modules/typescript/lib/typescript.js
+@@ -121485,8 +121485,8 @@ var ts;
+         if (configFileName)
+             updateExtendedConfigFilesWatches(toPath(configFileName), compilerOptions, watchOptions, ts.WatchType.ExtendedConfigFile);
+         return configFileName ?
+-            { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, close: close } :
+-            { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, updateRootFileNames: updateRootFileNames, close: close };
++            { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, close: close, sourceFilesCache: sourceFilesCache, synchronizeProgram: synchronizeProgram } :
++            { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, updateRootFileNames: updateRootFileNames, close: close, sourceFilesCache: sourceFilesCache, synchronizeProgram: synchronizeProgram };
+         function close() {
+             clearInvalidateResolutionsOfFailedLookupLocations();
+             resolutionCache.clear();
