@@ -1,3 +1,4 @@
+import fancyLog from "fancy-log";
 import { replaceTscAliasPaths } from "tsc-alias";
 import ts from "typescript";
 import { ScanError, Scanner, UpdateResult } from "./scanner";
@@ -101,6 +102,27 @@ ${content}`;
       let result;
       try {
         result = Math.max(...this.updatedFiles.map(args[0].getSourceFile.bind(args[0])).map(this.scanner.refreshTypes.bind(this.scanner)), UpdateResult.NOTHING);
+        let diagnostic = null;
+        switch (result) {
+          case UpdateResult.SCHEMA:
+              diagnostic = "Only schema changed.";
+            break;
+          case UpdateResult.FULL:
+            diagnostic = "Rescanning all module api files.";
+            break;
+        }
+        if (diagnostic) {
+          this.host.onWatchStatusChange?.(
+            ts.createCompilerDiagnostic({
+              code: -1,
+              category: ts.DiagnosticCategory.Message,
+              key: "",
+              message: diagnostic
+            }),
+            this.host.getNewLine(),
+            this.watch.getCurrentProgram().getCompilerOptions()
+          );
+        }
       } catch (e) {
         if (e instanceof ScanError) {
           console.log(`Error '${e.message}' for type '${e.typeName}' in '${e.fileName}'.`);
@@ -153,6 +175,6 @@ ${content}`;
   }
 
   protected reportWatchStatus(diagnostic: ts.Diagnostic): void {
-    console.log(ts.formatDiagnostic(diagnostic, this.formatHost));
+    fancyLog(diagnostic.messageText);
   }
 }
