@@ -1,7 +1,6 @@
 {
   "scripts": {
-    "w-c": "tsc -w -p compiler/tsconfig.json",
-    "r-c": "nodemon -w build build/compile.js",
+    "r-c": "gulp watch",
     "r-g": "nodemon -w dist -e json,js -d 0.2 dist/core/index.js",
     "postinstall": "patch-package"
   },
