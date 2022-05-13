@@ -1,5 +1,5 @@
 import ts from "typescript";
-import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../src/core/schema";
+import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/core/schema";
 import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "./utils";
 
 export enum UpdateResult {
@@ -49,7 +49,8 @@ export class Scanner {
 
     this.typesRegex = this.buildTypesRegex();
 
-    this.program = this.watch.getCurrentProgram().getProgram();
+    // No idea why this cast is needed, but gulp complains if it's absent
+    this.program = (this.watch as any).getCurrentProgram().getProgram();
     this.checker = this.program.getTypeChecker();
     this.sourceFiles = this.program.getSourceFiles().filter(not(isNodeModule));
 

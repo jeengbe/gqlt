@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import ts from "typescript";
-import { SchemaArgument, SchemaField, SchemaOutputType, SchemaScalar, SchemaType } from "../src/core/schema";
-import { __src } from "./compile";
+import { __src } from ".";
+import { SchemaArgument, SchemaField, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/core/schema";
 
 export function not<Args extends any[]>(predicate: (...args: Args) => boolean) {
   return (...args: Args) => !predicate(...args);
