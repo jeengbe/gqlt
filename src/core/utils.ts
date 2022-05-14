@@ -9,3 +9,5 @@ export abstract class Scalar<T> {
     protected readonly data: T
   ) { }
 }
+
+export class ValidationError extends Error { }

@@ -181,13 +181,14 @@ export class Scanner {
 
       for (const member of classOrInterfaceDeclaration.members) {
         if (!(ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isPropertySignature(member))) continue;
-        if (!ts.isIdentifier(member.name)) continue;
-        const fieldName = member.name.text;
+        const { name: fieldName, member: memberName } = this.nodeUtils.getFieldName(member);
+        if (!fieldName) continue;
 
         try {
           type.fields[fieldName] = {
             kind: "field",
             name: fieldName,
+            member: memberName,
             description: this.nodeUtils.getNodeDescription(member),
             type: this.nodeUtils.getNodeOutputType(member),
             args: ts.isMethodDeclaration(member)
@@ -414,6 +415,21 @@ class NodeUtils {
 
   isUndefined(type: ts.TypeNode) {
     return type.kind === ts.SyntaxKind.UndefinedKeyword;
+  }
+
+  getFieldName(member: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertySignature) {
+    if (!ts.isIdentifier(member.name)) return { member: undefined, name: undefined };
+    const symbol = this.checker.getSymbolAtLocation(member.name);
+    if (symbol === undefined) throw new Error(`Could not get symbol for node ${member.name}`);
+    const docTag = symbol?.getJsDocTags(this.checker).find(tag => tag.name === "gqlField");
+
+    return docTag && docTag.text ? {
+      member: member.name.text,
+      name: ts.displayPartsToString(docTag.text)
+    } : {
+      member: member.name.text,
+      name: member.name.text.replace(/^get([A-Z])/, (_, match) => match.toLowerCase())
+    };
   }
 }
 

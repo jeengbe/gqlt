@@ -1,5 +1,6 @@
 import { __core } from "@paths";
 import cors from "cors";
+import "dotenv/config";
 import express from "express";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
@@ -7,6 +8,7 @@ import { GraphQLBoolean, GraphQLFieldResolver, GraphQLFloat, GraphQLID, GraphQLI
 import * as path from "path";
 import { init, root } from "./classes";
 import { Schema, SchemaOutputType } from "./schema";
+import { ValidationError } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("source-map-support").install();
@@ -73,7 +75,7 @@ for (const name in schema) {
           fields[field.name] = {
             type: convertType(field.type),
             description: field.description,
-            resolve: resolve(field.name, field.resolve.args),
+            resolve: resolve(field.member, field.resolve.args),
             args: Object.values(field.args)?.reduce((args, arg) => {
               args[arg.name] = {
                 type: convertType(arg.type),
@@ -102,7 +104,9 @@ init().then(() => {
       graphiql: true,
       rootValue: root,
       customFormatErrorFn: (error) => {
-        console.log(error);
+        if (!(error.originalError instanceof ValidationError)) {
+          console.log(error);
+        }
         return error;
       }
     }),

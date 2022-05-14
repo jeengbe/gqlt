@@ -6,7 +6,7 @@ export class Module extends Type<IModule> {
   /**
    * The version history of the module
    */
-  get history(): ModuleHistoryEntry[] {
+  getHistory(): ModuleHistoryEntry[] {
     return this.data.history.map(entry => ({
       version: entry.version,
       changelog: entry.changelog,

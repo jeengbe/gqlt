@@ -8,7 +8,7 @@ export class Query {
    * Get a module by its path
    * @param path The path of the module
    */
-  async module(path: string): Promise<Module | null> {
+  async getModule(path: string): Promise<Module | null> {
     const data = await query<IModule>(aql`
       FOR module IN modules
         FILTER module.path == ${path}
@@ -21,7 +21,7 @@ export class Query {
   /**
    * Get all modules
    */
-  async modules(): Promise<Module[]> {
+  async getMmodules(): Promise<Module[]> {
     const data = await query<IModule>(aql`
       FOR module IN modules
         RETURN module

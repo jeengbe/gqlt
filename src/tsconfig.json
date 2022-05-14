@@ -18,13 +18,13 @@
         "./core/*"
       ],
       "@arana/pool/base/*": [
-        "modules/arana/pool/base/*"
+        "./modules/arana/pool/base/*"
       ],
       "@arana/pool/history/*": [
-        "modules/arana/pool/history/*"
+        "./modules/arana/pool/history/*"
       ],
       "@arana/utils/*": [
-        "modules/arana/utils/*"
+        "./modules/arana/utils/*"
       ],
       "@modules/*": [
         "./modules/*"

@@ -20,6 +20,7 @@ export interface SchemaType {
 export interface SchemaField {
   kind: "field";
   name: string;
+  member: string;
   description?: string;
   args: Record<string, SchemaArgument>;
   type: SchemaOutputType;
