@@ -21,7 +21,7 @@ export class Query {
   /**
    * Get all modules
    */
-  async getMmodules(): Promise<Module[]> {
+  async getModules(): Promise<Module[]> {
     const data = await query<IModule>(aql`
       FOR module IN modules
         RETURN module

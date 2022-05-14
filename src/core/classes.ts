@@ -44,7 +44,7 @@ const classes = new Proxy({}, {
             if (name === "data") return target.data;
             if (!(name in type.fields)) return null;
 
-            return target.#instances[type.fields[name].resolve.from][name];
+            return target.#instances[type.fields[name].resolve.file][type.fields[name].resolve.member];
           }
         });
       }

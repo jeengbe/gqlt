@@ -59,7 +59,7 @@ export class Builder {
 
     this.scanner = new Scanner(this.watch);
     // Force schema to compile
-    this.invalidateModuleApiFiles(UpdateResult.SCHEMA);
+    this.invalidateModuleApiFiles(UpdateResult.FULL);
     this.watch.synchronizeProgram();
   }
 
@@ -125,7 +125,7 @@ ${content}`;
         }
       } catch (e) {
         if (e instanceof ScanError) {
-          console.log(`Error '${e.message}' for type '${e.typeName}' in '${e.fileName}'.`);
+          console.log(`Error: ${e.message} for type '${e.typeName}' in '${e.fileName}'.`);
           return;
         } else {
           throw e;

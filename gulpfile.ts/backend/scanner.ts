@@ -47,10 +47,7 @@ export class Scanner {
       }
     };
 
-    this.typesRegex = this.buildTypesRegex();
-
-    // No idea why this cast is needed, but gulp complains if it's absent
-    this.program = (this.watch as any).getCurrentProgram().getProgram();
+    this.program = this.watch.getCurrentProgram().getProgram();
     this.checker = this.program.getTypeChecker();
     this.sourceFiles = this.program.getSourceFiles().filter(not(isNodeModule));
 
@@ -58,6 +55,7 @@ export class Scanner {
 
     this.scanScalars();
     this.scanTypes();
+    this.typesRegex = this.buildTypesRegex();
   }
 
   getTypes() {
@@ -188,7 +186,6 @@ export class Scanner {
           type.fields[fieldName] = {
             kind: "field",
             name: fieldName,
-            member: memberName,
             description: this.nodeUtils.getNodeDescription(member),
             type: this.nodeUtils.getNodeOutputType(member),
             args: ts.isMethodDeclaration(member)
@@ -209,7 +206,8 @@ export class Scanner {
               args: ts.isMethodDeclaration(member)
                 ? member.parameters.map(p => p.name).filter(ts.isIdentifier).map(n => n.text)
                 : false,
-              from: moduleFileName
+              file: moduleFileName,
+              member: memberName
             }
           };
         } catch (e) {
@@ -239,7 +237,7 @@ export class Scanner {
         Object.assign(oldType, {
           from: oldType.from.filter(f => f !== moduleFileName),
           fields: Object.entries(oldType.fields).reduce((fields, [fieldName, field]) => {
-            if (field.resolve.from === moduleFileName) return fields;
+            if (field.resolve.file === moduleFileName) return fields;
             fields[fieldName] = field;
 
             return fields;
@@ -257,7 +255,7 @@ export class Scanner {
             if (fieldName in type.fields) {
               const field = type.fields[fieldName];
 
-              if (oldField.resolve.from !== moduleFileName) {
+              if (oldField.resolve.file !== moduleFileName) {
                 throw new ScanError(`Field is already defined`, moduleFileName, fieldName);
               }
               if (!areTypesEqual(oldField, field)) {
@@ -268,7 +266,7 @@ export class Scanner {
                 fields[fieldName] = oldField;
               }
             } else {
-              if (oldField.resolve.from !== moduleFileName) {
+              if (oldField.resolve.file !== moduleFileName) {
                 fields[fieldName] = oldField;
               }
             }

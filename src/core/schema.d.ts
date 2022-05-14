@@ -20,13 +20,13 @@ export interface SchemaType {
 export interface SchemaField {
   kind: "field";
   name: string;
-  member: string;
   description?: string;
   args: Record<string, SchemaArgument>;
   type: SchemaOutputType;
   resolve: {
     args?: string[] | false;
-    from: string;
+    file: string;
+    member: string;
   };
 }
 

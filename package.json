@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "w-c": "tsc -w -p gulpfile.ts/tsconfig.json",
     "r-c": "gulp watch",
     "r-g": "nodemon -w dist -e json,js -d 0.2 dist/core/index.js",
     "postinstall": "patch-package"

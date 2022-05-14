@@ -75,7 +75,7 @@ for (const name in schema) {
           fields[field.name] = {
             type: convertType(field.type),
             description: field.description,
-            resolve: resolve(field.member, field.resolve.args),
+            resolve: resolve(field.name, field.resolve.args),
             args: Object.values(field.args)?.reduce((args, arg) => {
               args[arg.name] = {
                 type: convertType(arg.type),
