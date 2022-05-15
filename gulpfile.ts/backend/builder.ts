@@ -57,7 +57,14 @@ export class Builder {
     // This is ok as we patch TS to expose the extra variable
     this.watch = ts.createWatchProgram(this.host) as any;
 
-    this.scanner = new Scanner(this.watch);
+    try {
+      this.scanner = new Scanner(this.watch);
+    } catch (e) {
+      if (e instanceof ScanError) {
+        console.log(`Error: ${e.message} for type '${e.typeName}' in '${e.fileName}' (field: ${e.fieldName}).`);
+      }
+      throw e;
+    }
     // Force schema to compile
     this.invalidateModuleApiFiles(UpdateResult.FULL);
     this.watch.synchronizeProgram();
@@ -74,7 +81,7 @@ export class Builder {
       return JSON.stringify(this.scanner.getTypes(), null, 2);
     } else if (isModuleApiFile(fileName)) {
       let content = this.oldReadFile(fileName);
-      content = content?.replace(this.scanner.getTypesRegex(), `new __classes.$1`);
+      content = this.scanner.replace(content);
 
       return `import __classes from "@classes";
 ${content}`;
@@ -125,7 +132,7 @@ ${content}`;
         }
       } catch (e) {
         if (e instanceof ScanError) {
-          console.log(`Error: ${e.message} for type '${e.typeName}' in '${e.fileName}'.`);
+          console.log(`Error: ${e.message} for type '${e.typeName}' in '${e.fileName}' (field: ${e.fieldName}).`);
           return;
         } else {
           throw e;

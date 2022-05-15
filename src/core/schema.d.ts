@@ -14,6 +14,7 @@ export interface SchemaType {
   name: string;
   description?: string;
   fields: Record<string, SchemaField>;
+  staticFields: Record<string, SchemaStaticField>
   from: string[];
 }
 
@@ -27,6 +28,12 @@ export interface SchemaField {
     args?: string[] | false;
     file: string;
   };
+}
+
+export interface SchemaStaticField {
+  kind: "staticField";
+  name: string;
+  from: string[];
 }
 
 export type SchemaOutputType = {

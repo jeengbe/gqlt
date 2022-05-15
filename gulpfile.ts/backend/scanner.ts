@@ -19,7 +19,7 @@ export enum UpdateResult {
 
 export class Scanner {
   protected types: Schema;
-  protected typesRegex: RegExp;
+  protected typesRegexes: [RegExp, string][];
 
   protected nodeUtils: NodeUtils;
 
@@ -36,6 +36,7 @@ export class Scanner {
         name: "Query",
         description: "The root query type",
         fields: {},
+        staticFields: {},
         from: []
       },
       Mutation: {
@@ -43,6 +44,7 @@ export class Scanner {
         name: "Mutation",
         description: "The root mutation type",
         fields: {},
+        staticFields: {},
         from: []
       }
     };
@@ -55,19 +57,25 @@ export class Scanner {
 
     this.scanScalars();
     this.scanTypes();
-    this.typesRegex = this.buildTypesRegex();
+    this.typesRegexes = this.buildTypesRegexes();
   }
 
   getTypes() {
     return this.types;
   }
 
-  getTypesRegex() {
-    return this.typesRegex;
+  replace(content?: string) {
+    if (!content) return content;
+    return this.typesRegexes.reduce((c, [rex, replace]) => {
+      return c.replace(rex, replace);
+    }, content);
   }
 
-  protected buildTypesRegex() {
-    return new RegExp(`new (${Object.keys(this.types).join("|")})`, "g");
+  protected buildTypesRegexes(): typeof this.typesRegexes {
+    return [
+      [new RegExp(`new (${Object.keys(this.types).join("|")})`, "g"), "new __classes.$1"],
+      [new RegExp(`(${Object.keys(this.types).join("|")})\\.`, "g"), "__classes.$1."]
+    ];
   }
 
   refreshTypes(sourceFile?: ts.SourceFile): UpdateResult {
@@ -170,6 +178,7 @@ export class Scanner {
         kind: "type",
         name: typeName,
         fields: {},
+        staticFields: {},
         description: this.nodeUtils.getNodeDescription(classOrInterfaceDeclaration),
         from: [moduleFileName]
       };
@@ -180,37 +189,48 @@ export class Scanner {
         if (!(ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isPropertySignature(member))) continue;
         const { name: fieldName, member: memberName } = this.nodeUtils.getFieldName(member);
         if (!fieldName) continue;
+        if (fieldName === "data" && !(member.modifierFlagsCache & ts.ModifierFlags.Static)) throw new ScanError("Reserved field", moduleFileName, typeName, fieldName);
 
-        try {
-          type.fields[memberName] = {
-            kind: "field",
+        if (member.modifierFlagsCache & ts.ModifierFlags.Static) {
+          type.staticFields[memberName] = {
+            kind: "staticField",
             name: fieldName,
-            description: this.nodeUtils.getNodeDescription(member),
-            type: this.nodeUtils.getNodeOutputType(member),
-            args: ts.isMethodDeclaration(member)
-              ? member.parameters.reduce((params, p) => {
-                if (!ts.isIdentifier(p.name)) return params;
-                const parameteName = p.name.text;
-
-                params[parameteName] = {
-                  kind: "argument",
-                  name: parameteName,
-                  description: this.nodeUtils.getNodeDescription(p),
-                  type: this.nodeUtils.getNodeOutputType(p)
-                };
-                return params;
-              }, {} as Record<string, SchemaArgument>)
-              : {},
-            resolve: {
-              args: ts.isMethodDeclaration(member)
-                ? member.parameters.map(p => p.name).filter(ts.isIdentifier).map(n => n.text)
-                : false,
-              file: moduleFileName
-            }
+            from: [moduleFileName]
           };
-        } catch (e) {
-          console.error(e);
-          throw new ScanError(null, moduleFileName, typeName);
+        } else {
+          try {
+            type.fields[memberName] = {
+              kind: "field",
+              name: fieldName,
+              description: this.nodeUtils.getNodeDescription(member),
+              type: this.nodeUtils.getNodeOutputType(member),
+              args: ts.isMethodDeclaration(member)
+                ? member.parameters.reduce((params, p) => {
+                  if (!ts.isIdentifier(p.name)) return params;
+                  const parameteName = p.name.text;
+
+                  params[parameteName] = {
+                    kind: "argument",
+                    name: parameteName,
+                    description: this.nodeUtils.getNodeDescription(p),
+                    type: this.nodeUtils.getNodeOutputType(p)
+                  };
+                  return params;
+                }, {} as Record<string, SchemaArgument>)
+                : {},
+              resolve: {
+                args: ts.isMethodDeclaration(member)
+                  ? member.parameters.map(p => p.name).filter(ts.isIdentifier).map(n => n.text)
+                  : false,
+                file: moduleFileName,
+              }
+            };
+          } catch (e) {
+            if (e instanceof Error) {
+              throw new ScanError(e.message, moduleFileName, typeName, fieldName);
+            }
+            throw e;
+          }
         }
       }
     }
@@ -239,12 +259,24 @@ export class Scanner {
             fields[fieldName] = field;
 
             return fields;
-          }, {} as typeof oldType.fields)
+          }, {} as typeof oldType.fields),
+          staticFields: Object.entries(oldType.staticFields).reduce((fields, [fieldName, field]) => {
+            if (field.from.includes(moduleFileName)) {
+              field.from = field.from.filter(from => from !== moduleFileName);
+            };
+            if (field.from.length) {
+              fields[fieldName] = field;
+            }
+
+            return fields;
+          }, {} as typeof oldType.staticFields)
         });
+        oldType.from = oldType.from.filter(from => from !== moduleFileName);
       } else {
         // Update types
         const type = types[typeName];
         const updatedFields: string[] = [];
+        const updatedStaticFields: string[] = [];
 
         // Update old fields
         Object.assign(oldType, {
@@ -254,7 +286,7 @@ export class Scanner {
               const field = type.fields[fieldName];
 
               if (oldField.resolve.file !== moduleFileName) {
-                throw new ScanError(`Field is already defined`, moduleFileName, fieldName);
+                throw new ScanError(`Field is already defined`, moduleFileName, typeName, fieldName);
               }
               if (!areTypesEqual(oldField, field)) {
                 result = Math.max(result, UpdateResult.SCHEMA);
@@ -270,7 +302,22 @@ export class Scanner {
             }
             updatedFields.push(fieldName);
             return fields;
-          }, {} as typeof oldType.fields)
+          }, {} as typeof oldType.fields),
+          staticFields: Object.entries(oldType.staticFields).reduce((fields, [fieldName, oldField]) => {
+            if (!(fieldName in type.staticFields)) {
+              oldField.from = oldField.from.filter(from => from !== moduleFileName);
+              result = Math.max(result, UpdateResult.SCHEMA);
+            } else {
+              if (!oldField.from.includes(moduleFileName)) {
+                oldField.from.push(moduleFileName);
+              }
+            }
+            if (oldField.from.length) {
+              fields[fieldName] = oldField;
+            }
+            updatedStaticFields.push(fieldName);
+            return fields;
+          }, {} as typeof oldType.staticFields)
         });
 
         // Push new fields
@@ -280,11 +327,17 @@ export class Scanner {
           result = Math.max(result, UpdateResult.SCHEMA);
           return fields;
         }, {} as typeof oldType.fields));
+        Object.assign(oldType.staticFields, Object.entries(type.staticFields).reduce((fields, [fieldName, field]) => {
+          if (updatedStaticFields.includes(fieldName)) return fields;
+          fields[fieldName] = field;
+          result = Math.max(result, UpdateResult.SCHEMA);
+          return fields;
+        }, {} as typeof oldType.staticFields));
 
-        if (updatedFields.length || Object.keys(type.fields).length) {
-          Object.assign(oldType, {
-            from: oldType.from.includes(moduleFileName) ? oldType.from : [...oldType.from, moduleFileName]
-          });
+        if (updatedFields.length || updatedStaticFields.length || Object.keys(type.fields).length || Object.keys(type.staticFields).length) {
+          if (!oldType.from.includes(moduleFileName)) {
+            oldType.from.push(moduleFileName);
+          }
         }
 
         updatedTypes.push(typeName);
@@ -433,7 +486,8 @@ export class ScanError extends Error {
   constructor(
     message: string | null,
     private _fileName: string,
-    private _typeName: string
+    private _typeName: string,
+    private _fieldName?: string
   ) {
     super(message ?? undefined);
   }
@@ -444,5 +498,9 @@ export class ScanError extends Error {
 
   get typeName() {
     return this._typeName;
+  }
+
+  get fieldName() {
+    return this._fieldName;
   }
 }

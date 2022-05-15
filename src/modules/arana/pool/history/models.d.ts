@@ -1,13 +1,14 @@
 import type { Timestamp, VersionString } from "@arana/utils/scalars";
-import type { IModule as IModuleBase } from "../base/models";
+import type { Document } from "@core/types";
+import type { Author } from "../base/scalars";
 
-export interface IModule extends IModuleBase {
+export interface IModule extends Document {
   history: IModuleHistoryEntry[];
 }
 
 export interface IModuleHistoryEntry {
   version: VersionString;
   changelog: string[];
-  authors: string[];
+  authors: Author[];
   releaseDate: Timestamp;
 }

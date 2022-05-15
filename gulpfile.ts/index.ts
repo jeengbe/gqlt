@@ -1,4 +1,5 @@
 import { parallel } from "gulp";
+import "source-map-support/register";
 import { watch as watchBackend } from "./backend";
 import { exec, task } from "./utils";
 

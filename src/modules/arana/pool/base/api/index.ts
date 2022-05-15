@@ -1,6 +1,6 @@
 import { query } from "@core/database";
 import { createTempDir } from "@core/files";
-import { DataError, exec, ValidationError } from "@core/utils";
+import { DataError, exec, randomHex, ValidationError } from "@core/utils";
 import { create as createArchive } from "archiver";
 import * as fs from "fs";
 import gitUrlParse from "git-url-parse";
@@ -64,16 +64,20 @@ export class Query {
             if (!fs.existsSync(path.resolve(dir, "module.yml"))) throw new Error();
             config = parseYaml(fs.readFileSync(path.resolve(dir, "module.yml"), "utf-8")) as Record<string, unknown> | null;
             if (!(typeof config === "object" && config && "path" in config && typeof config.path === "string")) throw new Error();
+            config = await Module.formatData(config);
           } catch (e) {
-            reject("Invalid config");
-            return;
+            if (e instanceof DataError) {
+              reject("Invalid config");
+              return;
+            }
+            throw e;
           }
 
           if (await this.getModule(config.path)) reject("Module already exists");
 
           let filename;
           do {
-            filename = `${(Math.random() + 1).toString(16).substring(3)}.zip`;
+            filename = `${randomHex(12)}.zip`;
           } while (fs.existsSync(path.resolve(_modulesStore, filename)));
 
           const dest = fs.createWriteStream(path.resolve(_modulesStore, filename));

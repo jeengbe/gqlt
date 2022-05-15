@@ -1,25 +1,26 @@
 import type { VersionString } from "@arana/utils/scalars";
 import { isVersionString } from "@arana/utils/scalars";
 import { query } from "@core/database";
-import type { ConstructorData } from "@core/utils";
-import { DataError, isString, Type } from "@core/utils";
+import { DataError, isArray, isRecordUnknown, isString, Type } from "@core/utils";
 import type { IModule } from "../models";
+import { isAuthor } from "../scalars";
 
 export class Module extends Type<IModule> {
-  constructor(data: ConstructorData<IModule>) {
+  static async formatData(data: unknown): Promise<IModule> {
+    if (!isRecordUnknown(data)) throw new DataError();
     if (!isString(data.path)) throw new DataError("path");
     if (!isString(data.name)) throw new DataError("name");
     if (!isVersionString(data.version)) throw new DataError("version");
-    if (Array.isArray(data.authors) && !data.authors.every(isString)) throw new DataError("authors");
+    if (!isArray(data.authors, isAuthor, 1)) throw new DataError("authors");
 
-    super({
+    return {
       _key: data.path.replace(/\//g, "_"),
       name: data.name,
       path: data.path,
       description: typeof data.description === "string" ? data.description : "",
       version: data.version,
-      authors: Array.isArray(data.authors) ? data.authors : []
-    });
+      authors: "authors" in data ? data.authors : []
+    };
   }
 
   /**

@@ -1,18 +1,18 @@
 import { __temp } from "@paths";
 import * as fs from "fs";
 import * as path from "path";
+import { randomHex } from "./utils";
 
 export function createTempDir(): {
   name: string;
   dir: string;
   remove: () => void;
 } {
-  const length = 6;
   let name: string;
   let dir: string;
 
   do {
-    name = (Math.random() + 1).toString(16).substring(15 - length);
+    name = randomHex(6);
     dir = path.resolve(__temp, name);
   } while (fs.existsSync(dir));
   fs.mkdirSync(dir);
