@@ -47,6 +47,7 @@ export class Builder {
       this.reportWatchStatus.bind(this)
     );
 
+    // We patch these, so we need a reference to their original
     this.oldReadFile = this.host.readFile.bind(this.host);
     this.host.readFile = this.readFile.bind(this);
     this.oldCreateProgram = this.host.createProgram.bind(this.host);
@@ -54,7 +55,7 @@ export class Builder {
     this.oldAfterProgramCreate = this.host.afterProgramCreate?.bind(this.host);
     this.host.afterProgramCreate = this.afterProgramCreate.bind(this);
 
-    // This is ok as we patch TS to expose the extra variable
+    // This cast is ok as we patch TS to expose the extra variable
     this.watch = ts.createWatchProgram(this.host) as any;
 
     try {
@@ -65,14 +66,16 @@ export class Builder {
       }
       throw e;
     }
-    // Force schema to compile
+
+    // Force schema to compile by forcing complete invalidation after initial schema scan
     this.invalidateModuleApiFiles(UpdateResult.FULL);
     this.watch.synchronizeProgram();
   }
 
   protected readFile(...args: Parameters<typeof this.oldReadFile>) {
-    const fileName = args[0];
+    const [fileName] = args;
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!this.scanner) {
       return this.oldReadFile(fileName);
     }
@@ -85,17 +88,16 @@ export class Builder {
 
       return `import __classes from "@classes";
 ${content}`;
-    } else {
-      return this.oldReadFile(fileName);
     }
+    return this.oldReadFile(fileName);
   }
 
   protected createProgram(...args: Parameters<typeof this.oldCreateProgram>) {
-    const oldProgram = args[3];
-
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (this.watch) {
       for (const [fileName, cache] of this.watch.sourceFilesCache.entries()) {
         if (cache === false || cache.version === false) {
+          // Track changed files here so we don't have to scan _every_ file for changes
           this.updatedFiles.push(fileName);
         }
       }
@@ -105,14 +107,16 @@ ${content}`;
   }
 
   protected afterProgramCreate(...args: Parameters<Exclude<typeof this.oldAfterProgramCreate, undefined>>) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (this.watch) {
       let result;
       try {
-        result = Math.max(...this.updatedFiles.map(args[0].getSourceFile.bind(args[0])).map(this.scanner.refreshTypes.bind(this.scanner)), UpdateResult.NOTHING);
+        // Scan only files that changed since last compilation (=scan) and add ✨ custom diagnostic messages ✨
+        result = Math.max(...this.updatedFiles.map(file => this.scanner.refreshTypes(args[0].getSourceFile(file))), UpdateResult.NOTHING);
         let diagnostic = null;
         switch (result) {
           case UpdateResult.SCHEMA:
-              diagnostic = "Only schema changed.";
+            diagnostic = "Only schema changed.";
             break;
           case UpdateResult.FULL:
             diagnostic = "Rescanning all module api files.";
@@ -134,30 +138,34 @@ ${content}`;
         if (e instanceof ScanError) {
           console.log(`Error: ${e.message} for type '${e.typeName}' in '${e.fileName}' (field: ${e.fieldName}).`);
           return;
-        } else {
-          throw e;
         }
+        throw e;
       }
       this.updatedFiles = [];
 
-      this.invalidateModuleApiFiles(result);
-
+      // If nothing changed since last compilation, emit
       if (result === UpdateResult.NOTHING) {
         this.oldAfterProgramCreate?.(...args);
-        replaceTscAliasPaths({
-          configFile: this.tsconfigPath,
+        void replaceTscAliasPaths({
+          configFile: this.tsconfigPath
         });
       } else {
+        // Otherwise invalidate affected files and recompile
+        this.invalidateModuleApiFiles(result);
         this.watch.synchronizeProgram();
       }
     } else {
+      // Initial pass (not everything is initialized yet), emit normally
       this.oldAfterProgramCreate?.(...args);
-      replaceTscAliasPaths({
-        configFile: this.tsconfigPath,
+      void replaceTscAliasPaths({
+        configFile: this.tsconfigPath
       });
     }
   }
 
+  /**
+   * Invalidate affected files depending on scanner's update result
+   */
   protected invalidateModuleApiFiles(updateResult: UpdateResult) {
     if (updateResult === UpdateResult.NOTHING) return;
 

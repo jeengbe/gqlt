@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
-import ts from "typescript";
+import type ts from "typescript";
 import { __src } from ".";
-import { SchemaArgument, SchemaField, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/core/schema";
+import type { SchemaArgument, SchemaField, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/core/schema";
 
 export function not<Args extends any[]>(predicate: (...args: Args) => boolean) {
   return (...args: Args) => !predicate(...args);
@@ -44,7 +44,7 @@ export function isModuleFile(fileName: string) {
 }
 
 export function getModuleScopeFileName(fileName: string) {
-  return path.normalize(fileName).substring((__src + "/modules/").length, path.normalize(fileName).length - (fileName.endsWith(".d.ts") ? 5 : 3)).replace(/\\/g, "/");
+  return path.normalize(fileName).substring((`${__src}/modules/`).length, path.normalize(fileName).length - (fileName.endsWith(".d.ts") ? 5 : 3)).replace(/\\/g, "/");
 }
 
 type CompareSchemaType = SchemaType | SchemaScalar | SchemaField | SchemaOutputType | SchemaArgument;

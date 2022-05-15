@@ -59,10 +59,10 @@ const classes = new Proxy({
         });
       }
     }, {
-      get(_, member) {
+      get(__, member) {
         // Trap for static access
-        if (typeof member !== "string") return (_ as any)[member];
-        if (!(member in type.staticFields)) return (_ as any)[member];
+        if (typeof member !== "string") return (__ as any)[member];
+        if (!(member in type.staticFields)) return (__ as any)[member];
 
         return async (...args: any[]) => {
           const result = {};

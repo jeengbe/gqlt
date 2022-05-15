@@ -6,15 +6,15 @@ export enum UpdateResult {
   /**
    * Nothing changed, do not recompile
    */
-  NOTHING,
+  NOTHING = 0,
   /**
    * Parameters or arguments changed, recompile schema only
    */
-  SCHEMA,
+  SCHEMA = 1,
   /**
    * New types or scalars added, recompile everything
    */
-  FULL
+  FULL = 2
 }
 
 export class Scanner {
@@ -30,6 +30,7 @@ export class Scanner {
   constructor(
     protected watch: ReturnType<typeof ts.createWatchProgram>
   ) {
+    // We always provide `Query` and `Mutation`
     this.types = {
       Query: {
         kind: "type",
@@ -55,6 +56,7 @@ export class Scanner {
 
     this.nodeUtils = new NodeUtils(this.checker);
 
+    // Initially scan for scalars and types, and also build regexes
     this.scanScalars();
     this.scanTypes();
     this.typesRegexes = this.buildTypesRegexes();
@@ -64,11 +66,12 @@ export class Scanner {
     return this.types;
   }
 
+  /**
+   * Replace all references to types with proxied `__classes`-calls
+   */
   replace(content?: string) {
     if (!content) return content;
-    return this.typesRegexes.reduce((c, [rex, replace]) => {
-      return c.replace(rex, replace);
-    }, content);
+    return this.typesRegexes.reduce((c, [rex, replace]) => c.replace(rex, replace), content);
   }
 
   protected buildTypesRegexes(): typeof this.typesRegexes {
@@ -92,12 +95,19 @@ export class Scanner {
   protected updateScalars(sourceFile: ts.SourceFile): UpdateResult {
     if (!isModuleFile(sourceFile.fileName)) return UpdateResult.NOTHING;
 
+    // We handle this in two steps
+    // First, find all scalars currently in the file
+    // Then, compare our findings with previous entries and return respective update result
+    // ???
+    // Step 4: PROFIT!!!
+
     const moduleFileName = getModuleScopeFileName(sourceFile.fileName);
     const scalars: Record<string, SchemaScalar> = {};
 
     for (const aliasDeclaration of sourceFile.statements.filter(ts.isTypeAliasDeclaration)) {
       const scalarName = aliasDeclaration.name.text;
-      const type = aliasDeclaration.type;
+      const { type } = aliasDeclaration;
+
       if (!ts.isTypeReferenceNode(type)) continue;
       // TODO: Check for actual symbol
       if (!ts.isIdentifier(type.typeName) || type.typeName.text !== "Scalar") continue;
@@ -119,10 +129,13 @@ export class Scanner {
     let result = UpdateResult.NOTHING;
     const oldScalars: Record<string, SchemaScalar> = {};
 
-    for (const [scalarName, scalar] of Object.entries(this.types)) {
-      if (scalar.kind === "scalar" && scalar.from === moduleFileName) {
+    // First we delete all old scalars from this file. This way, we don't need to worry about conflicts with the previous scan of the same file.
+    // Then we simply push all found scalars. Deleted scalars are automatically deletes this way.
+
+    for (const [scalarName, oldScalar] of Object.entries(this.types)) {
+      if (oldScalar.kind === "scalar" && oldScalar.from === moduleFileName) {
         delete this.types[scalarName];
-        oldScalars[scalarName] = scalar;
+        oldScalars[scalarName] = oldScalar;
       }
     }
 
@@ -130,16 +143,19 @@ export class Scanner {
       const scalar = scalars[scalarName];
 
       if (scalarName in this.types) {
-        throw new ScanError(`Duplicate scalar name`, moduleFileName, scalarName);
+        throw new ScanError("Duplicate scalar name", moduleFileName, scalarName);
       }
 
       if (!areTypesEqual(Object.entries(oldScalars).find(([oldScalarName]) => oldScalarName === scalarName)?.[1], scalar)) {
+        // New scalar is not equal to the previous entry, something changed
+        // Update the schema only
         result = UpdateResult.SCHEMA;
       }
 
       this.types[scalarName] = scalar;
     }
 
+    // Force all files to recompile if any scalars were added/removed
     if (Object.keys(oldScalars).length !== Object.keys(scalars).length) {
       result = UpdateResult.FULL;
     } else {
@@ -163,14 +179,15 @@ export class Scanner {
   protected updateTypes(sourceFile: ts.SourceFile): UpdateResult {
     if (!isModuleApiFile(sourceFile.fileName)) return UpdateResult.NOTHING;
 
+    // Same idea for types as for scalars: first scan, then update
+
     const moduleFileName = getModuleScopeFileName(sourceFile.fileName);
     const types: Record<string, SchemaType> = {};
 
-    for (const node of sourceFile.statements) {
-      if (!(ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node))) continue;
-      if (!this.nodeUtils.isNodeExported(node)) continue;
+    for (const classOrInterfaceDeclaration of sourceFile.statements) {
+      if (!(ts.isClassDeclaration(classOrInterfaceDeclaration) || ts.isInterfaceDeclaration(classOrInterfaceDeclaration))) continue;
+      if (!this.nodeUtils.isNodeExported(classOrInterfaceDeclaration)) continue;
 
-      const classOrInterfaceDeclaration = node as ts.ClassDeclaration | ts.InterfaceDeclaration;
       const typeName = classOrInterfaceDeclaration.name?.text;
       if (!typeName) continue;
 
@@ -183,18 +200,20 @@ export class Scanner {
         from: [moduleFileName]
       };
 
-      const type = types[typeName] as SchemaType;
+      const type = types[typeName];
 
       for (const member of classOrInterfaceDeclaration.members) {
+        // We only collect fields from this set of nodes
         if (!(ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isPropertySignature(member))) continue;
+        // Fields may have different names in GraphQL (see implementation for details), so we need to track both
         const { name: fieldName, member: memberName } = this.nodeUtils.getFieldName(member);
         if (!fieldName) continue;
-        if (fieldName === "data" && !(member.modifierFlagsCache & ts.ModifierFlags.Static)) throw new ScanError("Reserved field", moduleFileName, typeName, fieldName);
 
+        // Store static fields separately from regular fields
         if (member.modifierFlagsCache & ts.ModifierFlags.Static) {
           type.staticFields[memberName] = {
             kind: "staticField",
-            name: fieldName,
+            name: memberName,
             from: [moduleFileName]
           };
         } else {
@@ -204,6 +223,7 @@ export class Scanner {
               name: fieldName,
               description: this.nodeUtils.getNodeDescription(member),
               type: this.nodeUtils.getNodeOutputType(member),
+              // Map parameters to their respective schema representations (order matters!)
               args: ts.isMethodDeclaration(member)
                 ? member.parameters.reduce((params, p) => {
                   if (!ts.isIdentifier(p.name)) return params;
@@ -219,10 +239,12 @@ export class Scanner {
                 }, {} as Record<string, SchemaArgument>)
                 : {},
               resolve: {
+                // We need to remember whether each field is a method or property, as this matters in runtime
+                // Again, parameter order matters as we map parameters based on this information
                 args: ts.isMethodDeclaration(member)
                   ? member.parameters.map(p => p.name).filter(ts.isIdentifier).map(n => n.text)
                   : false,
-                file: moduleFileName,
+                file: moduleFileName
               }
             };
           } catch (e) {
@@ -236,16 +258,23 @@ export class Scanner {
     }
 
     let result = UpdateResult.NOTHING;
+    // We track updated types so we can decide to which extent to update files
     const updatedTypes: string[] = [];
+
+    // This is done differently:
+    // We iterate all current types and
+    // - if it no longer exists in the current file, remove all references to it
+    // - if it still exists, update fields and static fields
 
     for (const [typeName, oldType] of Object.entries(this.types)) {
       if (oldType.kind !== "type") continue;
 
       if (!(typeName in types)) {
+        // Not is and never was in the current file: safe to ignore
         if (!oldType.from.includes(moduleFileName)) continue;
 
         result = UpdateResult.FULL;
-        // Type is removed from file
+        // Type only existed in this file
         if (oldType.from.length === 1) {
           delete this.types[typeName];
           continue;
@@ -254,87 +283,98 @@ export class Scanner {
         // Remove all references to file
         Object.assign(oldType, {
           from: oldType.from.filter(f => f !== moduleFileName),
-          fields: Object.entries(oldType.fields).reduce((fields, [fieldName, field]) => {
+          fields: Object.entries(oldType.fields).reduce<typeof oldType.fields>((fields, [fieldName, field]) => {
             if (field.resolve.file === moduleFileName) return fields;
             fields[fieldName] = field;
 
             return fields;
-          }, {} as typeof oldType.fields),
-          staticFields: Object.entries(oldType.staticFields).reduce((fields, [fieldName, field]) => {
+          }, {}),
+          staticFields: Object.entries(oldType.staticFields).reduce<typeof oldType.staticFields>((fields, [fieldName, field]) => {
             if (field.from.includes(moduleFileName)) {
               field.from = field.from.filter(from => from !== moduleFileName);
-            };
+            }
             if (field.from.length) {
               fields[fieldName] = field;
             }
 
             return fields;
-          }, {} as typeof oldType.staticFields)
+          }, {})
         });
         oldType.from = oldType.from.filter(from => from !== moduleFileName);
       } else {
         // Update types
         const type = types[typeName];
-        const updatedFields: string[] = [];
-        const updatedStaticFields: string[] = [];
+        const dealtWithFields: string[] = [];
+        const dealtWithStaticFields: string[] = [];
 
-        // Update old fields
+        // To update (static) fields, we first iterate all currently set fields and check whether they need to be updated
+        // Then, we push all new fields that weren't dealt with in the previous step
+
         Object.assign(oldType, {
           description: type.description,
-          fields: Object.entries(oldType.fields).reduce((fields, [fieldName, oldField]) => {
+          // eslint-disable-next-line @typescript-eslint/no-loop-func
+          fields: Object.entries(oldType.fields).reduce<typeof oldType.fields>((fields, [fieldName, oldField]) => {
             if (fieldName in type.fields) {
+              // Field existed and exists: Update
               const field = type.fields[fieldName];
 
               if (oldField.resolve.file !== moduleFileName) {
-                throw new ScanError(`Field is already defined`, moduleFileName, typeName, fieldName);
+                throw new ScanError("Field is already defined", moduleFileName, typeName, fieldName);
               }
               if (!areTypesEqual(oldField, field)) {
                 result = Math.max(result, UpdateResult.SCHEMA);
                 oldField = field;
               }
-              if (fieldName in type.fields) {
-                fields[fieldName] = oldField;
-              }
-            } else {
-              if (oldField.resolve.file !== moduleFileName) {
-                fields[fieldName] = oldField;
-              }
+              dealtWithFields.push(fieldName);
+              fields[fieldName] = oldField;
+            } else if (oldField.resolve.file !== moduleFileName) {
+              // Don't bother if field is defined in a different file
+              // Else, delete it (by not including it anymore)
+              fields[fieldName] = oldField;
             }
-            updatedFields.push(fieldName);
             return fields;
-          }, {} as typeof oldType.fields),
-          staticFields: Object.entries(oldType.staticFields).reduce((fields, [fieldName, oldField]) => {
-            if (!(fieldName in type.staticFields)) {
-              oldField.from = oldField.from.filter(from => from !== moduleFileName);
-              result = Math.max(result, UpdateResult.SCHEMA);
-            } else {
+          }, {}),
+          // eslint-disable-next-line @typescript-eslint/no-loop-func
+          staticFields: Object.entries(oldType.staticFields).reduce<typeof oldType.staticFields>((fields, [fieldName, oldField]) => {
+            // Slightly different procedure for static fields:
+            // If it still exists, we push the current file name on the resolution stack
+            // Else, we simply remove the current file
+            if (fieldName in type.staticFields) {
               if (!oldField.from.includes(moduleFileName)) {
                 oldField.from.push(moduleFileName);
+                dealtWithStaticFields.push(fieldName);
+                result = Math.max(result, UpdateResult.SCHEMA);
               }
+            } else {
+              oldField.from = oldField.from.filter(from => from !== moduleFileName);
+              result = Math.max(result, UpdateResult.SCHEMA);
             }
+            // Only bother adding the field if it has at least one handler
             if (oldField.from.length) {
               fields[fieldName] = oldField;
             }
-            updatedStaticFields.push(fieldName);
             return fields;
-          }, {} as typeof oldType.staticFields)
+          }, {})
         });
 
         // Push new fields
-        Object.assign(oldType.fields, Object.entries(type.fields).reduce((fields, [fieldName, field]) => {
-          if (updatedFields.includes(fieldName)) return fields;
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
+        Object.assign(oldType.fields, Object.entries(type.fields).reduce<typeof oldType.fields>((fields, [fieldName, field]) => {
+          if (dealtWithFields.includes(fieldName)) return fields;
           fields[fieldName] = field;
           result = Math.max(result, UpdateResult.SCHEMA);
           return fields;
-        }, {} as typeof oldType.fields));
-        Object.assign(oldType.staticFields, Object.entries(type.staticFields).reduce((fields, [fieldName, field]) => {
-          if (updatedStaticFields.includes(fieldName)) return fields;
+        }, {}));
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
+        Object.assign(oldType.staticFields, Object.entries(type.staticFields).reduce<typeof oldType.staticFields>((fields, [fieldName, field]) => {
+          if (dealtWithStaticFields.includes(fieldName)) return fields;
           fields[fieldName] = field;
           result = Math.max(result, UpdateResult.SCHEMA);
           return fields;
-        }, {} as typeof oldType.staticFields));
+        }, {}));
 
-        if (updatedFields.length || updatedStaticFields.length || Object.keys(type.fields).length || Object.keys(type.staticFields).length) {
+        // If we contribute fields, we are entitled to a mention if the type's `from` list
+        if (Object.keys(type.fields).length || Object.keys(type.staticFields).length) {
           if (!oldType.from.includes(moduleFileName)) {
             oldType.from.push(moduleFileName);
           }
@@ -344,6 +384,7 @@ export class Scanner {
       }
     }
 
+    // Request a full recompilation if we added or removed types
     for (const typeName in types) {
       if (!updatedTypes.includes(typeName)) {
         result = UpdateResult.FULL;
@@ -363,7 +404,7 @@ class NodeUtils {
   isNodeExported(node: ts.Node): boolean {
     return (
       (ts.getCombinedModifierFlags(node as ts.Declaration) & ts.ModifierFlags.Export) !== 0 ||
-      (!!node.parent && node.parent.kind === ts.SyntaxKind.SourceFile)
+      (Boolean(node.parent) && node.parent.kind === ts.SyntaxKind.SourceFile)
     );
   }
 
@@ -390,7 +431,7 @@ class NodeUtils {
         // `String` scalar
         return this.nonNull({
           kind: "type",
-          name: "string",
+          name: "string"
         }, isNullable);
 
       // case ts.SyntaxKind.TrueKeyword:
@@ -420,7 +461,7 @@ class NodeUtils {
         }
         return this.nonNull({
           kind: "type",
-          name: (typeReference.typeName as ts.Identifier).text,
+          name: (typeReference.typeName as ts.Identifier).text
         }, isNullable);
 
       case ts.SyntaxKind.ArrayType:
@@ -458,36 +499,38 @@ class NodeUtils {
     };
   }
 
-  isNullLiteral(type: ts.TypeNode) {
+  isNullLiteral(this: void, type: ts.TypeNode) {
     return type.kind === ts.SyntaxKind.LiteralType && (type as ts.LiteralTypeNode).literal.kind === ts.SyntaxKind.NullKeyword;
   }
 
-  isUndefined(type: ts.TypeNode) {
+  isUndefined(this: void, type: ts.TypeNode) {
     return type.kind === ts.SyntaxKind.UndefinedKeyword;
   }
 
   getFieldName(member: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertySignature) {
     if (!ts.isIdentifier(member.name)) return { member: undefined, name: undefined };
     const symbol = this.checker.getSymbolAtLocation(member.name);
-    if (symbol === undefined) throw new Error(`Could not get symbol for node ${member.name}`);
-    const docTag = symbol?.getJsDocTags(this.checker).find(tag => tag.name === "gqlField");
+    if (symbol === undefined) throw new Error(`Could not get symbol for node ${member.name.text}`);
+    const docTag = symbol.getJsDocTags(this.checker).find(tag => tag.name === "gqlField");
 
-    return docTag && docTag.text ? {
-      member: member.name.text,
-      name: ts.displayPartsToString(docTag.text)
-    } : {
-      member: member.name.text,
-      name: member.name.text.replace(/^get([A-Z])/, (_, match) => match.toLowerCase())
-    };
+    return docTag?.text
+      ? {
+        member: member.name.text,
+        name: ts.displayPartsToString(docTag.text)
+      }
+      : {
+        member: member.name.text,
+        name: member.name.text.replace(/^get(?:[A-Z])/, (_, match) => match.toLowerCase())
+      };
   }
 }
 
 export class ScanError extends Error {
   constructor(
     message: string | null,
-    private _fileName: string,
-    private _typeName: string,
-    private _fieldName?: string
+    private readonly _fileName: string,
+    private readonly _typeName: string,
+    private readonly _fieldName?: string
   ) {
     super(message ?? undefined);
   }

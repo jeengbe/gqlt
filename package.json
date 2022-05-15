@@ -31,6 +31,7 @@
     "@types/ts-expose-internals": "npm:ts-expose-internals@4.6.0-beta",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
+    "@zerollup/ts-transform-paths": "^1.7.18",
     "eslint": "^8.15.0",
     "glob": "^7.2.0",
     "gulp": "^4.0.2",
