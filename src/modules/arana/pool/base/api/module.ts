@@ -1,9 +1,25 @@
-import type { VersionString } from "@arana/utils/scalars";
+import { isVersionString, VersionString } from "@arana/utils/scalars";
 import { query } from "@core/database";
-import { Type } from "@core/utils";
+import { ConstructorData, DataError, isString, Type } from "@core/utils";
 import type { IModule } from "../models";
 
 export class Module extends Type<IModule> {
+  constructor(data: ConstructorData<IModule>) {
+    if (!isString(data.path)) throw new DataError("path");
+    if (!isString(data.name)) throw new DataError("name");
+    if (!isVersionString(data.version)) throw new DataError("version");
+    if (Array.isArray(data.authors) && !data.authors.every(isString)) throw new DataError("authors");
+
+    super({
+      _key: data.path,
+      name: data.name,
+    path: data.path,
+      description: typeof data.description === "string" ? data.description : "",
+      version: data.version,
+      authors: Array.isArray(data.authors) ? data.authors : [],
+    });
+  }
+
   /**
    * The path of the module
    */

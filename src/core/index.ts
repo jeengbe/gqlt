@@ -1,3 +1,14 @@
+// This has to run first to reliably set cwd correctly for dotenv etc.
+/*
+ * BEGIN ORDER MATTERS
+ */
+import * as path from "path";
+process.chdir(path.resolve(__dirname, "..", ".."));
+import "source-map-support/register";
+/*
+ * END ORDER MATTERS
+ */
+
 import { __core } from "@paths";
 import cors from "cors";
 import "dotenv/config";
@@ -5,13 +16,9 @@ import express from "express";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
 import { GraphQLBoolean, GraphQLFieldResolver, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLNullableType, GraphQLObjectType, GraphQLOutputType, GraphQLScalarType, GraphQLSchema, GraphQLString, GraphQLType } from "graphql";
-import * as path from "path";
 import { init, root } from "./classes";
 import { Schema, SchemaOutputType } from "./schema";
 import { ValidationError } from "./utils";
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-require("source-map-support").install();
 
 const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 
@@ -27,7 +34,7 @@ function resolve(field: string, functionArgs: string[] | false = false) {
   return (async (source, args) => {
     if (functionArgs !== false) {
       // Is callable
-      return await source[field](...functionArgs.map(arg => args[arg]));
+      return await source[field].call(source, ...functionArgs.map(arg => args[arg]));
     } else {
       // Not callable
       return await source[field];
@@ -71,11 +78,11 @@ for (const name in schema) {
       types[name] = new GraphQLObjectType({
         name: type.name,
         description: type.description,
-        fields: () => Object.values(type.fields).reduce((fields, field) => {
+        fields: () => Object.entries(type.fields).reduce((fields, [memberName, field]) => {
           fields[field.name] = {
             type: convertType(field.type),
             description: field.description,
-            resolve: resolve(field.name, field.resolve.args),
+            resolve: resolve(memberName, field.resolve.args),
             args: Object.values(field.args)?.reduce((args, arg) => {
               args[arg.name] = {
                 type: convertType(arg.type),

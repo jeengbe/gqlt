@@ -26,7 +26,6 @@ export interface SchemaField {
   resolve: {
     args?: string[] | false;
     file: string;
-    member: string;
   };
 }
 

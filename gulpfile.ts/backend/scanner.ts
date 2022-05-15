@@ -82,7 +82,6 @@ export class Scanner {
   }
 
   protected updateScalars(sourceFile: ts.SourceFile): UpdateResult {
-    if (!sourceFile.isDeclarationFile) return UpdateResult.NOTHING;
     if (!isModuleFile(sourceFile.fileName)) return UpdateResult.NOTHING;
 
     const moduleFileName = getModuleScopeFileName(sourceFile.fileName);
@@ -183,7 +182,7 @@ export class Scanner {
         if (!fieldName) continue;
 
         try {
-          type.fields[fieldName] = {
+          type.fields[memberName] = {
             kind: "field",
             name: fieldName,
             description: this.nodeUtils.getNodeDescription(member),
@@ -206,8 +205,7 @@ export class Scanner {
               args: ts.isMethodDeclaration(member)
                 ? member.parameters.map(p => p.name).filter(ts.isIdentifier).map(n => n.text)
                 : false,
-              file: moduleFileName,
-              member: memberName
+              file: moduleFileName
             }
           };
         } catch (e) {
