@@ -33,15 +33,23 @@ const classes = new Proxy({
     const type = schema[typeName] as SchemaType;
 
     return class {
-      #instances;
+      protected readonly data: Record<string, any> = {};
+      #instances: Record<string, any> = {};
       _type;
 
-      constructor(protected readonly data: any) {
+      constructor(data: any) {
         this._type = typeName;
-        this.#instances = type.from.reduce < Record<string, any>>((instances, from) => {
-          instances[from] = new filesMap[from][type.name](data);
-          return instances;
-        }, {});
+        for (const from of type.from) {
+          // Add _unaltered so we don't add data from constructors that just pass though all data
+          const r = new filesMap[from][type.name]({ ...data, _unaltered: true });
+          if ("instance" in r) {
+            this.#instances[from] = r.instance;
+            Object.assign(this.data, r.data);
+          } else {
+            this.#instances[from] = r;
+            Object.assign(this.data, data);
+          }
+        }
 
         // eslint-disable-next-line no-constructor-return -- We need this here for our Proxy magic
         return new Proxy(this, {

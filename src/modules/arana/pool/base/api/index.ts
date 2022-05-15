@@ -1,6 +1,6 @@
 import { query } from "@core/database";
 import { createTempDir } from "@core/files";
-import { exec, ValidationError } from "@core/utils";
+import { DataError, exec, ValidationError } from "@core/utils";
 import { create as createArchive } from "archiver";
 import * as fs from "fs";
 import gitUrlParse from "git-url-parse";
@@ -82,7 +82,18 @@ export class Query {
           archive.directory(dir, false);
           await archive.finalize();
 
-          const module = new Module(config);
+          let module;
+          try {
+            module = new Module(config);
+          } catch (e) {
+            if (e instanceof DataError) {
+              reject(`Invalid config value: ${e.message}`);
+              return;
+            }
+            throw e;
+          }
+
+          console.log(module);
 
           resolve();
         });

@@ -13,7 +13,7 @@ export class Module extends Type<IModule> {
     if (Array.isArray(data.authors) && !data.authors.every(isString)) throw new DataError("authors");
 
     super({
-      _key: data.path,
+      _key: data.path.replace(/\//g, "_"),
       name: data.name,
       path: data.path,
       description: typeof data.description === "string" ? data.description : "",
