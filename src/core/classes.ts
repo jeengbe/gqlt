@@ -13,6 +13,7 @@ export async function init() {
     if (type.kind === "type") {
       for (const from of type.from) {
         if (!(from in filesMap)) {
+          // eslint-disable-next-line require-atomic-updates -- Safe here as we only set a property
           filesMap[from] = await import(`./../modules/${from}.js`);
         }
       }
@@ -37,11 +38,12 @@ const classes = new Proxy({
 
       constructor(protected readonly data: any) {
         this._type = typeName;
-        this.#instances = type.from.reduce((instances, from) => {
+        this.#instances = type.from.reduce < Record<string, any>>((instances, from) => {
           instances[from] = new filesMap[from][type.name](data);
           return instances;
-        }, {} as Record<string, any>);
+        }, {});
 
+        // eslint-disable-next-line no-constructor-return -- We need this here for our Proxy magic
         return new Proxy(this, {
           get(target, member) {
             if (typeof member !== "string") return null;

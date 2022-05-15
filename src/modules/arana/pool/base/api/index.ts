@@ -14,12 +14,12 @@ import { Module } from "./module";
 export class Query {
   /**
    * Get a module by its path
-   * @param path The path of the module
+   * @param modulePath The path of the module
    */
-  async getModule(path: string): Promise<Module | null> {
+  async getModule(modulePath: string): Promise<Module | null> {
     const data = await query<IModule>`
       FOR module IN modules
-        FILTER module.path == ${path}
+        FILTER module.path == ${modulePath}
         RETURN module
     `.first();
 
@@ -62,7 +62,7 @@ export class Query {
           let config;
           try {
             if (!fs.existsSync(path.resolve(dir, "module.yml"))) throw new Error();
-            config = parseYaml(fs.readFileSync(path.resolve(dir, "module.yml"), "utf-8")) as Record<string, unknown>;
+            config = parseYaml(fs.readFileSync(path.resolve(dir, "module.yml"), "utf-8")) as Record<string, unknown> | null;
             if (!(typeof config === "object" && config && "path" in config && typeof config.path === "string")) throw new Error();
           } catch (e) {
             reject("Invalid config");
@@ -73,14 +73,14 @@ export class Query {
 
           let filename;
           do {
-            filename = (Math.random() + 1).toString(16).substring(3) + ".zip";
+            filename = `${(Math.random() + 1).toString(16).substring(3)}.zip`;
           } while (fs.existsSync(path.resolve(_modulesStore, filename)));
 
           const dest = fs.createWriteStream(path.resolve(_modulesStore, filename));
           const archive = createArchive("zip");
           archive.pipe(dest);
           archive.directory(dir, false);
-          archive.finalize();
+          await archive.finalize();
 
           const module = new Module(config);
 

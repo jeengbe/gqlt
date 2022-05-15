@@ -9,4 +9,4 @@ export const __files = path.resolve("files");
 
 fs.rmSync(__temp, { recursive: true, force: true });
 fs.mkdirSync(__temp);
-fs.existsSync(__files) || fs.mkdirSync(__files);
+if (!fs.existsSync(__files)) fs.mkdirSync(__files);

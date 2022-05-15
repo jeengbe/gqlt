@@ -1,4 +1,4 @@
-import { Scalar } from "./types";
+import type { Scalar } from "./types";
 
 declare global {
   type integer = Scalar<number, "Integer">;

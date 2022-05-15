@@ -1,4 +1,4 @@
-import { Timestamp, VersionString } from "@arana/utils/scalars";
+import type { Timestamp, VersionString } from "@arana/utils/scalars";
 import type { IModule as IModuleBase } from "../base/models";
 
 export interface IModule extends IModuleBase {

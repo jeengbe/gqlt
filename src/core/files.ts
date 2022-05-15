@@ -3,12 +3,13 @@ import * as fs from "fs";
 import * as path from "path";
 
 export function createTempDir(): {
-  name: string,
+  name: string;
   dir: string;
   remove: () => void;
 } {
   const length = 6;
-  let name: string, dir: string;
+  let name: string;
+  let dir: string;
 
   do {
     name = (Math.random() + 1).toString(16).substring(15 - length);

@@ -1,6 +1,8 @@
-import { isVersionString, VersionString } from "@arana/utils/scalars";
+import type { VersionString } from "@arana/utils/scalars";
+import { isVersionString } from "@arana/utils/scalars";
 import { query } from "@core/database";
-import { ConstructorData, DataError, isString, Type } from "@core/utils";
+import type { ConstructorData } from "@core/utils";
+import { DataError, isString, Type } from "@core/utils";
 import type { IModule } from "../models";
 
 export class Module extends Type<IModule> {
@@ -13,10 +15,10 @@ export class Module extends Type<IModule> {
     super({
       _key: data.path,
       name: data.name,
-    path: data.path,
+      path: data.path,
       description: typeof data.description === "string" ? data.description : "",
       version: data.version,
-      authors: Array.isArray(data.authors) ? data.authors : [],
+      authors: Array.isArray(data.authors) ? data.authors : []
     });
   }
 

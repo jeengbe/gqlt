@@ -2,23 +2,23 @@
 /*
  * BEGIN ORDER MATTERS
  */
-import * as path from "path";
-process.chdir(path.resolve(__dirname, "..", ".."));
-import "source-map-support/register";
 /*
  * END ORDER MATTERS
  */
-
 import { __core } from "@paths";
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
-import { GraphQLBoolean, GraphQLFieldResolver, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLNullableType, GraphQLObjectType, GraphQLOutputType, GraphQLScalarType, GraphQLSchema, GraphQLString, GraphQLType } from "graphql";
+import type { GraphQLFieldResolver, GraphQLNullableType, GraphQLOutputType, GraphQLType } from "graphql";
+import { GraphQLBoolean, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType, GraphQLSchema, GraphQLString } from "graphql";
+import * as path from "path";
+import "source-map-support/register";
 import { init, root } from "./classes";
-import { Schema, SchemaOutputType } from "./schema";
+import type { Schema, SchemaOutputType } from "./schema";
 import { ValidationError } from "./utils";
+process.chdir(path.resolve(__dirname, "..", ".."));
 
 const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 
@@ -34,11 +34,10 @@ function resolve(field: string, functionArgs: string[] | false = false) {
   return (async (source, args) => {
     if (functionArgs !== false) {
       // Is callable
-      return await source[field].call(source, ...functionArgs.map(arg => args[arg]));
-    } else {
-      // Not callable
-      return await source[field];
+      return await source[field](...functionArgs.map(arg => args[arg]));
     }
+    // Not callable
+    return await source[field];
   }) as GraphQLFieldResolver<any, any, any>;
 }
 
@@ -59,9 +58,8 @@ function convertType(type: SchemaOutputType): GraphQLOutputType {
     return nonNull(convertType(type.of));
   } else if (type.kind === "array") {
     return array(convertType(type.of));
-  } else {
-    return types[type.name];
   }
+  return types[type.name];
 }
 
 for (const name in schema) {
@@ -78,35 +76,35 @@ for (const name in schema) {
       types[name] = new GraphQLObjectType({
         name: type.name,
         description: type.description,
-        fields: () => Object.entries(type.fields).reduce((fields, [memberName, field]) => {
+        fields: () => Object.entries(type.fields).reduce<Record<string, any>>((fields, [memberName, field]) => {
           fields[field.name] = {
             type: convertType(field.type),
             description: field.description,
             resolve: resolve(memberName, field.resolve.args),
-            args: Object.values(field.args)?.reduce((args, arg) => {
+            args: Object.values(field.args).reduce<Record<string, any>>((args, arg) => {
               args[arg.name] = {
                 type: convertType(arg.type),
                 description: arg.description
               };
               return args;
-            }, {} as Record<string, any>)
+            }, {})
           };
           return fields;
-        }, {} as Record<string, any>)
+        }, {})
       });
       break;
   }
 }
 
-init().then(() => {
+void init().then(() => {
   const app = express();
 
   app.use(cors());
   app.use(
     graphqlHTTP({
       schema: new GraphQLSchema({
-        query: types["Query"],
-        mutation: types["Mutation"]
+        query: types.Query,
+        mutation: types.Mutation
       }),
       graphiql: true,
       rootValue: root,
@@ -116,7 +114,7 @@ init().then(() => {
         }
         return error;
       }
-    }),
+    })
   );
 
   app.listen(4000);

@@ -30,13 +30,13 @@ export interface SchemaField {
 }
 
 export type SchemaOutputType = {
-  kind: "nonNull",
+  kind: "nonNull";
   of: SchemaOutputType;
 } | {
-  kind: "array",
+  kind: "array";
   of: SchemaOutputType;
 } | {
-  kind: "type",
+  kind: "type";
   name: string;
 };
 

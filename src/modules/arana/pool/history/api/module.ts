@@ -1,4 +1,4 @@
-import { Timestamp, VersionString } from "@arana/utils/scalars";
+import type { Timestamp, VersionString } from "@arana/utils/scalars";
 import { Type } from "@core/utils";
 import type { IModule } from "../models";
 
@@ -11,7 +11,7 @@ export class Module extends Type<IModule> {
       version: entry.version,
       changelog: entry.changelog,
       authors: entry.authors,
-      releaseDate: entry.releaseDate,
+      releaseDate: entry.releaseDate
     }));
   }
 }

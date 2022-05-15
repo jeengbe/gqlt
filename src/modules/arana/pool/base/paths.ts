@@ -4,4 +4,4 @@ import * as path from "path";
 
 export const _modulesStore = path.resolve(__files, "arana", "modules");
 
-fs.existsSync(_modulesStore) || fs.mkdirSync(_modulesStore, { recursive: true });
+if (!fs.existsSync(_modulesStore)) fs.mkdirSync(_modulesStore, { recursive: true });
