@@ -520,7 +520,7 @@ class NodeUtils {
       }
       : {
         member: member.name.text,
-        name: member.name.text.replace(/^get(?:[A-Z])/, (_, match) => match.toLowerCase())
+        name: member.name.text.replace(/^get(?<firstChar>[A-Z])/, (_, match) => match.toLowerCase())
       };
   }
 }

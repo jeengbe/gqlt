@@ -147,7 +147,7 @@
     "prefer-promise-reject-errors": "off",
     "prefer-regex-literals": "warn",
     "radix": "error",
-    "@typescript-eslint/require-await": "warn",
+    "@typescript-eslint/require-await": "off",
     "require-unicode-regexp": "off",
     "vars-on-top": "off",
     "wrap-iife": "warn",

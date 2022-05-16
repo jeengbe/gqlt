@@ -14,7 +14,7 @@ export interface SchemaType {
   name: string;
   description?: string;
   fields: Record<string, SchemaField>;
-  staticFields: Record<string, SchemaStaticField>
+  staticFields: Record<string, SchemaStaticField>;
   from: string[];
 }
 

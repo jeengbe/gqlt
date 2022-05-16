@@ -3,11 +3,25 @@ import * as fs from "fs";
 import * as path from "path";
 import { randomHex } from "./utils";
 
-export function createTempDir(): {
+interface Tempdir {
+  /**
+   * Directory name
+   */
   name: string;
+  /**
+   * Absolute path of the directory
+   */
   dir: string;
+  /**
+   * Delete the temp directory
+   */
   remove: () => void;
-} {
+}
+
+/**
+ * Create a temporary directory
+ */
+export function createTempDir(): Tempdir {
   let name: string;
   let dir: string;
 

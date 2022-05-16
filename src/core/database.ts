@@ -17,6 +17,25 @@ type Response<R> = Promise<ArrayCursor<R>> & {
   first(): Promise<R | undefined>;
 };
 
+/**
+ * @example
+ * ```ts
+ * const user = await query<IUser>`
+ *  FOR user IN users
+ *    FILTER user.username == ${username}
+ *    RETURN user
+ * `.first();
+ * ```
+ *
+ * @example
+ * ```ts
+ * const user = await query<IUser>(aql`
+ *  FOR user IN users
+ *    FILTER user.username == ${username}
+ *    RETURN user
+ * `).first();
+ * ```
+ */
 export function query<R = unknown>(q: AqlQuery, options?: QueryOptions): Response<R>;
 export function query<R = unknown>(q: TemplateStringsArray, ...args: AqlValue[]): Response<R>;
 export function query<R = unknown>(q: AqlQuery | TemplateStringsArray, ...optionsOrArgs: QueryOptions[] | AqlValue[]): Response<R> {

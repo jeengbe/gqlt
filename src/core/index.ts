@@ -1,9 +1,12 @@
 // This has to run first to reliably set cwd correctly for dotenv etc.
 /*
- * BEGIN ORDER MATTERS
+ * ORDER MATTERS
  */
+import * as path from "path";
+import "source-map-support/register";
+process.chdir(path.resolve(__dirname, "..", ".."));
 /*
- * END ORDER MATTERS
+ * ORDER NO LONGER MATTERS
  */
 import { __core } from "@paths";
 import cors from "cors";
@@ -13,12 +16,9 @@ import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
 import type { GraphQLFieldResolver, GraphQLNullableType, GraphQLOutputType, GraphQLType } from "graphql";
 import { GraphQLBoolean, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType, GraphQLSchema, GraphQLString } from "graphql";
-import * as path from "path";
-import "source-map-support/register";
 import { init, root } from "./classes";
 import type { Schema, SchemaOutputType } from "./schema";
 import { ValidationError } from "./utils";
-process.chdir(path.resolve(__dirname, "..", ".."));
 
 const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
 

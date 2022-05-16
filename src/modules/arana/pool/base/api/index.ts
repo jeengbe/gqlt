@@ -50,15 +50,19 @@ export class Query {
    * @param url Url of the module's git repository
    */
   async addModule(url: string) {
+    // This is an important check since `git clone` allows for file paths and possible remote file access
     if (gitUrlParse(url).protocol !== "ssh") throw new ValidationError("Not ssh protocol");
     const { dir, remove } = createTempDir();
 
     try {
       await new Promise<void>((resolve, reject) => {
+        // git clone the module into a new temp dir
         const git = exec("git", ["clone", url, dir], { stdio: "ignore" });
         git.on("close", async (code) => {
+          // Clone failed
           if (code !== 0) reject("Invalid url");
 
+          // Parse and check module config
           let config;
           try {
             if (!fs.existsSync(path.resolve(dir, "module.yml"))) throw new Error();
@@ -75,6 +79,7 @@ export class Query {
 
           if (await this.getModule(config.path)) reject("Module already exists");
 
+          // Place the module into a zipfile for later use
           let filename;
           do {
             filename = `${randomHex(12)}.zip`;
@@ -86,6 +91,7 @@ export class Query {
           archive.directory(dir, false);
           await archive.finalize();
 
+          // Create the Module and save it to Arango
           let module;
           try {
             module = new Module(config);
