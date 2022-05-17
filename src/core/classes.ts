@@ -56,6 +56,7 @@ const classes = new Proxy({
           get(target, member) {
             if (typeof member !== "string") return null;
             if (member === "data") return target.data;
+            if (member === "save") return () => Promise.all(Object.values(target.#instances).map((i: any) => i.save()));
             if (!(member in type.fields)) return null;
 
             return target.#instances[type.fields[member].resolve.file][member];

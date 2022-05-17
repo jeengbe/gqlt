@@ -2,6 +2,7 @@ import type { Author } from "@arana/pool/base/scalars";
 import { isAuthor } from "@arana/pool/base/scalars";
 import type { Timestamp, VersionString } from "@arana/utils/scalars";
 import { isTimestamp, isVersionString } from "@arana/utils/scalars";
+import { query } from "@core/database";
 import { DataError, isArray, isRecordUnknown, isString, Type } from "@core/utils";
 import type { IModule, IModuleHistoryEntry } from "../models";
 
@@ -19,8 +20,22 @@ export class Module extends Type<IModule> {
     if (!isArray(data.history, isHistoryEntry, false)) throw new DataError("history");
 
     return {
-      history: "history" in data ? data.history : [],
-    }
+      history: "history" in data ? data.history : []
+    };
+  }
+
+  async save() {
+    await query`
+      let data = {
+        history: ${this.data.history}
+      }
+
+      UPSERT {
+        _key: ${this.data._key}
+      } INSERT MERGE({
+        _key: ${this.data._key}
+      }, data) UPDATE data IN modules
+    `;
   }
 
   /**

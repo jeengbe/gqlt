@@ -23,6 +23,24 @@ export class Module extends Type<IModule> {
     };
   }
 
+  async save() {
+    await query`
+      LET data = {
+        name: ${this.data.name},
+        path: ${this.data.path},
+        description: ${this.data.description},
+        version: ${this.data.version},
+        authors: ${this.data.authors}
+      }
+
+      UPSERT {
+        _key: ${this.data._key}
+      } INSERT MERGE({
+        _key: ${this.data._key}
+      }, data) UPDATE data IN modules
+    `;
+  }
+
   /**
    * The path of the module
    */

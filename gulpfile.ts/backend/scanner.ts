@@ -208,6 +208,7 @@ export class Scanner {
         // Fields may have different names in GraphQL (see implementation for details), so we need to track both
         const { name: fieldName, member: memberName } = this.nodeUtils.getFieldName(member);
         if (!fieldName) continue;
+        if (memberName === "save") continue; // `save` is a reserved method name for saving objects to db
 
         // Store static fields separately from regular fields
         if (member.modifierFlagsCache & ts.ModifierFlags.Static) {

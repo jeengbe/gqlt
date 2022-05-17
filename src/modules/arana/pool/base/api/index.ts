@@ -51,7 +51,7 @@ export class Query {
    */
   async addModule(url: string) {
     // This is an important check since `git clone` allows for file paths and possible remote file access
-    if (gitUrlParse(url).protocol !== "ssh") throw new ValidationError("Not ssh protocol");
+    if (!["ssh", "https"].includes(gitUrlParse(url).protocol)) throw new ValidationError("Not ssh or https protocol");
     const { dir, remove } = createTempDir();
 
     try {
@@ -91,10 +91,11 @@ export class Query {
           archive.directory(dir, false);
           await archive.finalize();
 
-          // Create the Module and save it to Arango
+          // Create the Module and save it
           let module;
           try {
             module = new Module(config);
+            await module.save();
           } catch (e) {
             if (e instanceof DataError) {
               reject(`Invalid config value: ${e.message}`);
@@ -102,8 +103,6 @@ export class Query {
             }
             throw e;
           }
-
-          console.log(module);
 
           resolve();
         });
