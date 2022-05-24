@@ -77,18 +77,20 @@ for (const name in schema) {
         name: type.name,
         description: type.description,
         fields: () => Object.entries(type.fields).reduce<Record<string, any>>((fields, [memberName, field]) => {
-          fields[field.name] = {
-            type: convertType(field.type),
-            description: field.description,
-            resolve: resolve(memberName, field.resolve.args),
-            args: Object.values(field.args).reduce<Record<string, any>>((args, arg) => {
-              args[arg.name] = {
-                type: convertType(arg.type),
-                description: arg.description
-              };
-              return args;
-            }, {})
-          };
+          if (!field.resolve.internal) {
+            fields[field.name] = {
+              type: convertType(field.type),
+              description: field.description,
+              resolve: resolve(memberName, field.resolve.args),
+              args: Object.values(field.args).reduce<Record<string, any>>((args, arg) => {
+                args[arg.name] = {
+                  type: convertType(arg.type),
+                  description: arg.description
+                };
+                return args;
+              }, {})
+            };
+          }
           return fields;
         }, {})
       });

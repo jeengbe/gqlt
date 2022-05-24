@@ -206,6 +206,9 @@ export class Scanner {
         // We only collect fields from this set of nodes
         if (!(ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isPropertySignature(member))) continue;
         // Fields may have different names in GraphQL (see implementation for details), so we need to track both
+        const docTags = this.nodeUtils.getDocTags(member);
+
+        const internal = Boolean(docTags.find(tag => tag.name === "internal"));
         const { name: fieldName, member: memberName } = this.nodeUtils.getFieldName(member);
         if (!fieldName) continue;
         if (memberName === "save") continue; // `save` is a reserved method name for saving objects to db
@@ -245,7 +248,8 @@ export class Scanner {
                 args: ts.isMethodDeclaration(member)
                   ? member.parameters.map(p => p.name).filter(ts.isIdentifier).map(n => n.text)
                   : false,
-                file: moduleFileName
+                file: moduleFileName,
+                internal
               }
             };
           } catch (e) {
@@ -510,10 +514,7 @@ class NodeUtils {
 
   getFieldName(member: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertySignature) {
     if (!ts.isIdentifier(member.name)) return { member: undefined, name: undefined };
-    const symbol = this.checker.getSymbolAtLocation(member.name);
-    if (symbol === undefined) throw new Error(`Could not get symbol for node ${member.name.text}`);
-    const docTag = symbol.getJsDocTags(this.checker).find(tag => tag.name === "gqlField");
-
+    const docTag = this.getDocTags(member).find(tag => tag.name === "gqlField");
     return docTag?.text
       ? {
         member: member.name.text,
@@ -523,6 +524,12 @@ class NodeUtils {
         member: member.name.text,
         name: member.name.text.replace(/^get(?<firstChar>[A-Z])/, (_, match) => match.toLowerCase())
       };
+  }
+
+  getDocTags(member: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertySignature) {
+    const symbol = this.checker.getSymbolAtLocation(member.name);
+    if (symbol === undefined) throw new Error(`Could not get symbol for node ${"text" in member.name ? member.name.text : "anonymous"}`);
+    return symbol.getJsDocTags(this.checker);
   }
 }
 

@@ -1,14 +1,15 @@
 diff --git a/node_modules/typescript/lib/tsserver.js b/node_modules/typescript/lib/tsserver.js
-index 60a159a..cfd851e 100644
+index 60a159a..63394f4 100644
 --- a/node_modules/typescript/lib/tsserver.js
 +++ b/node_modules/typescript/lib/tsserver.js
-@@ -137074,7 +137074,8 @@ var ts;
+@@ -137074,7 +137074,9 @@ var ts;
              "variation",
              "version",
              "virtual",
 -            "yields"
 +            "yields",
-+            "gqlField"
++            "gqlField",
++            "internal"
          ];
          var jsDocTagNameCompletionEntries;
          var jsDocTagCompletionEntries;
