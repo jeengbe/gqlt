@@ -26,15 +26,9 @@ export class Module extends Type<IModule> {
 
   async save() {
     await query`
-      let data = {
-        history: ${this.data.history}
-      }
-
       UPSERT {
         _key: ${this.data._key}
-      } INSERT MERGE({
-        _key: ${this.data._key}
-      }, data) UPDATE data IN modules
+      } INSERT ${this.data} UPDATE ${this.data} IN modules
     `;
   }
 

@@ -17,6 +17,7 @@ export class Module extends Type<IModule> {
       _key: data.path.replace(/\//g, "_"),
       name: data.name,
       path: data.path,
+      zip: "",
       description: typeof data.description === "string" ? data.description : "",
       version: data.version,
       authors: "authors" in data ? data.authors : []
@@ -25,19 +26,9 @@ export class Module extends Type<IModule> {
 
   async save() {
     await query`
-      LET data = {
-        name: ${this.data.name},
-        path: ${this.data.path},
-        description: ${this.data.description},
-        version: ${this.data.version},
-        authors: ${this.data.authors}
-      }
-
       UPSERT {
         _key: ${this.data._key}
-      } INSERT MERGE({
-        _key: ${this.data._key}
-      }, data) UPDATE data IN modules
+      } INSERT ${this.data} UPDATE ${this.data} IN modules
     `;
   }
 
@@ -67,6 +58,22 @@ export class Module extends Type<IModule> {
    */
   getDescription(): string {
     return this.data.description;
+  }
+
+  /**
+   * Key of the module
+   * @internal
+   */
+  getKey() {
+    return this.data._key;
+  }
+
+  /**
+   * The name of the zip file in which the modules is stored
+   * @internal
+   */
+  getZip() {
+    return this.data.zip;
   }
 
   /**

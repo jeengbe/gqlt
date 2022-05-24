@@ -71,13 +71,16 @@ export class Query {
             config = await Module.formatData(config);
           } catch (e) {
             if (e instanceof DataError) {
-              reject("Invalid config");
+              reject(`Invalid config: ${e.message}`);
               return;
             }
             throw e;
           }
 
-          if (await this.getModule(config.path)) reject("Module already exists");
+          if (await this.getModule(config.path)) {
+            reject("Module already exists");
+            return;
+          }
 
           // Place the module into a zipfile for later use
           let filename;
@@ -85,11 +88,13 @@ export class Query {
             filename = `${randomHex(12)}.zip`;
           } while (fs.existsSync(path.resolve(_modulesStore, filename)));
 
+          fs.rmSync(path.resolve(dir, ".git"), { recursive: true, force: true });
           const dest = fs.createWriteStream(path.resolve(_modulesStore, filename));
           const archive = createArchive("zip");
           archive.pipe(dest);
           archive.directory(dir, false);
           await archive.finalize();
+          config.zip = filename;
 
           // Create the Module and save it
           let module;
@@ -99,6 +104,7 @@ export class Query {
           } catch (e) {
             if (e instanceof DataError) {
               reject(`Invalid config value: ${e.message}`);
+              fs.rmSync(path.resolve(_modulesStore, filename));
               return;
             }
             throw e;
@@ -106,15 +112,26 @@ export class Query {
 
           resolve();
         });
-        git.on("", error => {
-          console.log("me error");
-          throw error;
-        });
       });
     } catch (message) {
       throw new ValidationError(message as string);
     } finally {
       remove();
     }
+  }
+
+  /**
+   * Delete a module
+   * @param modulePath Path of the module
+   */
+  async deleteModule(modulePath: string) {
+    const module = await this.getModule(modulePath);
+    if (!module) throw new ValidationError("Module not found");
+
+    await query`
+      REMOVE { _key: ${module.getKey()} } IN modules
+    `;
+
+    fs.rmSync(path.resolve(_modulesStore, module.getZip()));
   }
 }
