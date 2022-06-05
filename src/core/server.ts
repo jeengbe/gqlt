@@ -2,7 +2,7 @@ import { sink } from "@core/sink";
 import cors from "cors";
 import express from "express";
 
-void (async () => {
+export default async () => {
   const app = express();
 
   app.use(cors());
@@ -11,4 +11,4 @@ void (async () => {
   );
 
   app.listen(4000);
-})();
+};

@@ -1,5 +1,5 @@
 import type { Timestamp, VersionString } from "@arana/utils/scalars";
-import type { Document } from "@core/types";
+import type { Document } from "@core/graphql/types";
 import type { Author } from "../base/scalars";
 
 export interface IModule extends Document {

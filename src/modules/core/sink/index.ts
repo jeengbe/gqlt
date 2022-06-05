@@ -1,9 +1,4 @@
-import { __core } from "@paths";
-import * as fs from "fs";
-import * as path from "path";
-import type { Sinks as SinksJson } from "../modules/core/sinks/generated/sinks";
-
-const sinks = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/sinks.json"), "utf-8")) as SinksJson;
+const sinks: { [K in keyof Sinks]?: Sinks[K][] } = {};
 
 /**
  * Get all items for a sink
@@ -24,5 +19,10 @@ export function sink<S extends keyof Sinks>(name: S): Sinks[S][];
  */
 export function sink<S extends keyof Sinks>(name: S, value: Sinks[S]): void;
 export function sink<S extends keyof Sinks>(name: S, value?: Sinks[S]): Sinks[S][] | void {
-  return null as any;
+  if (value !== undefined) {
+    if (!(name in sinks)) sinks[name] = [];
+    sinks[name]!.push(value);
+  } else {
+    return name in sinks ? sinks[name] : [];
+  }
 }

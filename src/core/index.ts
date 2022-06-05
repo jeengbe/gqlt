@@ -3,4 +3,8 @@
 import * as path from "path";
 import "source-map-support/register";
 process.chdir(path.resolve(__dirname, "..", ".."));
-import "@core/server";
+
+import setup from "@core/setup";
+import server from "@core/server";
+
+setup().then(server);

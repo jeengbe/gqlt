@@ -1,5 +1,5 @@
 import ts from "typescript";
-import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/core/schema";
+import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/modules/core/graphql/generated/schema";
 import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "./utils";
 
 export enum UpdateResult {
@@ -95,11 +95,10 @@ export class Scanner {
   protected updateScalars(sourceFile: ts.SourceFile): UpdateResult {
     if (!isModuleFile(sourceFile.fileName)) return UpdateResult.NOTHING;
 
-    // We handle this in two steps
-    // First, find all scalars currently in the file
-    // Then, compare our findings with previous entries and return respective update result
+    // We handle this in three steps
+    // First, find all scalars currently in the file and compare our findings with previous entries to return whether something worth reloading changed
     // ???
-    // Step 4: PROFIT!!!
+    // Step 3: PROFIT!!!
 
     const moduleFileName = getModuleScopeFileName(sourceFile.fileName);
     const scalars: Record<string, SchemaScalar> = {};

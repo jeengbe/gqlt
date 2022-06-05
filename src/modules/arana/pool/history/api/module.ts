@@ -3,7 +3,9 @@ import { isAuthor } from "@arana/pool/base/scalars";
 import type { Timestamp, VersionString } from "@arana/utils/scalars";
 import { isTimestamp, isVersionString } from "@arana/utils/scalars";
 import { query } from "@core/database";
-import { DataError, isArray, isRecordUnknown, isString, Type } from "@core/utils";
+import { Type } from "@core/graphql/type";
+import { isArray, isRecordUnknown, isString } from "@core/guards";
+import { DataError } from "@core/utils";
 import type { IModule, IModuleHistoryEntry } from "../models";
 
 function isHistoryEntry(value: unknown): value is IModuleHistoryEntry {

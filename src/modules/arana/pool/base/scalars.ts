@@ -1,4 +1,4 @@
-import type { Scalar } from "@core/types";
+import type { Scalar } from "@core/graphql/types";
 
 export type Author = Scalar<string, "Author">;
 

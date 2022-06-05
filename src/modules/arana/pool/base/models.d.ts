@@ -1,5 +1,5 @@
 import type { VersionString } from "@arana/utils/scalars";
-import type { Document, Edge } from "@core/types";
+import type { Document, Edge } from "@core/graphql/types";
 import type { Author } from "./scalars";
 
 export interface IModule extends Document {

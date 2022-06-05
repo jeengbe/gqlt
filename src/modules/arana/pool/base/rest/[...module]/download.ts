@@ -1,7 +1,7 @@
 import { _modulesStore } from "@arana/pool/base/paths";
 import type { GetReturn } from "@core/rest";
 import { Rest } from "@core/rest";
-import type { Args } from "@core/types";
+import type { Args } from "@core/rest/types";
 import * as path from "path";
 import { Query } from "../../api";
 

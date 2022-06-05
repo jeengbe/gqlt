@@ -33,7 +33,7 @@
         "./modules/*"
       ],
       "@classes": [
-        "./core/classes"
+        "./modules/core/graphql/classes"
       ]
     },
     "plugins": [
@@ -43,7 +43,7 @@
     ]
   },
   "include": [
-    "./**/*",
+    "./**/*"
   ],
   "exclude": [
     "./node_modules",

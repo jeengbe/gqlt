@@ -55,7 +55,7 @@ export class Builder {
     this.oldAfterProgramCreate = this.host.afterProgramCreate?.bind(this.host);
     this.host.afterProgramCreate = this.afterProgramCreate.bind(this);
 
-    // This cast is ok as we patch TS to expose the extra variable
+    // This cast is ok as we patch TS to expose the extra variables and methods
     this.watch = ts.createWatchProgram(this.host) as any;
 
     try {
