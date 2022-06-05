@@ -5,11 +5,11 @@ import type { ArrayCursor } from "arangojs/cursor";
 import type { QueryOptions } from "arangojs/database";
 
 const db = new Database({
-  url: "http://carlevel_db:8529",
-  databaseName: "arana",
+  url: process.env.DATABASE_URL,
+  databaseName: process.env.DATABASE_NAME,
   auth: {
-    username: "root",
-    password: "jMLUSLnnrCmUcjXS8AgJnt"
+    username: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD
   }
 });
 

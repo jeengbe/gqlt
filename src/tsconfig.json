@@ -17,6 +17,7 @@
         "./paths"
       ],
       "@core/*": [
+        "./modules/core/*",
         "./core/*"
       ],
       "@arana/pool/base/*": [
@@ -41,13 +42,8 @@
       }
     ]
   },
-  "files": [
-    "./core/index.ts",
-    "./core/scalars.d.ts"
-  ],
   "include": [
-    "./core/generated/*.json",
-    "./modules/**/*.ts"
+    "./**/*",
   ],
   "exclude": [
     "./node_modules",

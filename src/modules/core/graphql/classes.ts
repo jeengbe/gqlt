@@ -1,8 +1,8 @@
-import { __core } from "@paths";
 import * as fs from "fs";
 import * as path from "path";
-import type { RootType, Schema, SchemaType } from "./schema";
-const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
+import type { RootType, Schema, SchemaType } from "./generated/schema";
+
+const schema = JSON.parse(fs.readFileSync(path.resolve(__dirname, "generated/schema.json"), "utf-8")) as Schema;
 
 const filesMap: Record<string, any> = {};
 const rootInstances: Record<string, any> = {};
@@ -14,7 +14,7 @@ export async function init() {
     if (type.kind === "type") {
       for (const from of type.from) {
         if (!(from in filesMap)) {
-          // eslint-disable-next-line require-atomic-updates -- Safe here as we only set a property
+          // eslint-disable-next-line require-atomic-updates -- Safe to use here - imports are run synchronously, therefore `from in filesMap` always yields the expected result
           filesMap[from] = await import(`./../modules/${from}.js`);
         }
       }

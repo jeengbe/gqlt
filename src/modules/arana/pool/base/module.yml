@@ -1,2 +1,3 @@
 dependsOn:
+  - core/rest
   - arana/utils
