@@ -15,7 +15,7 @@ export async function init() {
       for (const from of type.from) {
         if (!(from in filesMap)) {
           // eslint-disable-next-line require-atomic-updates -- Safe to use here - imports are run synchronously, therefore `from in filesMap` always yields the expected result
-          filesMap[from] = await import(`./../modules/${from}.js`);
+          filesMap[from] = await import(`./../../../modules/${from}.js`);
         }
       }
     }

@@ -1,6 +1,5 @@
 import { sink } from "@core/sink";
 import { ValidationError } from "@core/utils";
-import { __core } from "@paths";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
 import type { GraphQLFieldResolver, GraphQLNullableType, GraphQLOutputType, GraphQLType } from "graphql";
@@ -9,7 +8,7 @@ import * as path from "path";
 import { init as initClasses, root } from "../classes";
 import type { Schema, SchemaOutputType } from "../generated/schema";
 
-const schema = JSON.parse(fs.readFileSync(path.resolve(__core, "generated/schema.json"), "utf-8")) as Schema;
+const schema = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../generated/schema.json"), "utf-8")) as Schema;
 
 function array<T extends GraphQLType>(type: T) {
   return new GraphQLList(type);
@@ -87,10 +86,10 @@ for (const name in schema) {
   }
 }
 
-sink("core/server/middleware", async () => {
+export default async () => {
   await initClasses();
 
-  return graphqlHTTP({
+  sink("core/server/middleware", graphqlHTTP({
     schema: new GraphQLSchema({
       query: types.Query,
       mutation: types.Mutation
@@ -105,5 +104,5 @@ sink("core/server/middleware", async () => {
       }
       return error;
     }
-  });
-});
+  }));
+};

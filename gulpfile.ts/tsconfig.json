@@ -7,7 +7,7 @@
     "sourceMap": true,
     "outDir": "./../gulpfile.js"
   },
-  "files": [
-    "./index.ts"
+  "include": [
+    "./**/*"
   ]
 }

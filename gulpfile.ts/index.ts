@@ -1,17 +1,7 @@
-import { parallel } from "gulp";
+// This has to run first to reliably set cwd correctly for dotenv etc.
+// ORDER MATTERS!
+import * as path from "path";
 import "source-map-support/register";
-import { watch as watchBackend } from "./backend";
-import { exec, task } from "./utils";
+process.chdir(path.resolve(__dirname, ".."));
 
-export const help = task(
-  () => exec("gulp", ["--tasks", "--depth", "1"]),
-  "List all top-level tasks"
-);
-
-// export const build = parallel(buildBackend);
-export const watch = task(
-  parallel(watchBackend),
-  "Watch for changes to Arana"
-);
-
-export default task(help, "Run `help`");
+export * from "./gulp";

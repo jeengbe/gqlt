@@ -5,7 +5,7 @@ export type MaybePromise<T> = T | Promise<T>;
 
 declare global {
   interface Sinks {
-    "core/server/middleware": MaybePromise<RequestHandler>;
+    "core/server/middleware": RequestHandler;
   }
 
   namespace NodeJS {

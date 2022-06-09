@@ -1,6 +1,10 @@
 import fancyLog from "fancy-log";
+import * as fs from "fs";
+import * as path from "path";
 import { replaceTscAliasPaths } from "tsc-alias";
 import ts from "typescript";
+import { __dist, __src } from "../paths";
+import { walkDir } from "../utils";
 import { ScanError, Scanner, UpdateResult } from "./scanner";
 import { isModuleApiFile } from "./utils";
 
@@ -97,7 +101,7 @@ ${content}`;
     if (this.watch) {
       for (const [fileName, cache] of this.watch.sourceFilesCache.entries()) {
         if (cache === false || cache.version === false) {
-          // Track changed files here so we don't have to scan _every_ file for changes
+          // Track changed files here so we don't have to scan every file for changes
           this.updatedFiles.push(fileName);
         }
       }
@@ -107,12 +111,17 @@ ${content}`;
   }
 
   protected afterProgramCreate(...args: Parameters<Exclude<typeof this.oldAfterProgramCreate, undefined>>) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const [program] = args;
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Not unnecessary as this may be called before initialization in the constructor
     if (this.watch) {
       let result;
       try {
         // Scan only files that changed since last compilation (=scan) and add ✨ custom diagnostic messages ✨
-        result = Math.max(...this.updatedFiles.map(file => this.scanner.refreshTypes(args[0].getSourceFile(file))), UpdateResult.NOTHING);
+        result = Math.max(
+          ...this.updatedFiles.map(file => this.scanner.refreshTypes(program.getSourceFile(file))),
+          UpdateResult.NOTHING
+        );
         let diagnostic = null;
         switch (result) {
           case UpdateResult.SCHEMA:
@@ -123,16 +132,7 @@ ${content}`;
             break;
         }
         if (diagnostic) {
-          this.host.onWatchStatusChange?.(
-            ts.createCompilerDiagnostic({
-              code: -1,
-              category: ts.DiagnosticCategory.Message,
-              key: "",
-              message: diagnostic
-            }),
-            this.host.getNewLine(),
-            this.watch.getCurrentProgram().getCompilerOptions()
-          );
+          this.reportWatchStatus(diagnostic);
         }
       } catch (e) {
         if (e instanceof ScanError) {
@@ -146,9 +146,7 @@ ${content}`;
       // If nothing changed since last compilation, emit
       if (result === UpdateResult.NOTHING) {
         this.oldAfterProgramCreate?.(...args);
-        void replaceTscAliasPaths({
-          configFile: this.tsconfigPath
-        });
+        this.afterEmit(program);
       } else {
         // Otherwise invalidate affected files and recompile
         this.invalidateModuleApiFiles(result);
@@ -157,9 +155,7 @@ ${content}`;
     } else {
       // Initial pass (not everything is initialized yet), emit normally
       this.oldAfterProgramCreate?.(...args);
-      void replaceTscAliasPaths({
-        configFile: this.tsconfigPath
-      });
+      this.afterEmit(program);
     }
   }
 
@@ -185,11 +181,25 @@ ${content}`;
     }
   }
 
+  protected afterEmit(program: ts.SemanticDiagnosticsBuilderProgram) {
+    void replaceTscAliasPaths({
+      configFile: this.tsconfigPath
+    });
+    let copied = 0;
+    walkDir(__src, (f, rel, abs) => {
+      if (f.endsWith(".yml")) {
+        fs.copyFileSync(abs, path.resolve(__dist, rel, f));
+        copied++;
+      }
+    });
+    this.reportWatchStatus(`Copied ${copied} extra file${copied === 1 ? "" : "s"}.`);
+  }
+
   protected reportDiagnostic(diagnostic: ts.Diagnostic): void {
     console.error(ts.formatDiagnostic(diagnostic, this.formatHost));
   }
 
-  protected reportWatchStatus(diagnostic: ts.Diagnostic): void {
-    fancyLog(diagnostic.messageText);
+  protected reportWatchStatus(diagnostic: ts.Diagnostic | string): void {
+    fancyLog(typeof diagnostic === "string" ? diagnostic : diagnostic.messageText);
   }
 }

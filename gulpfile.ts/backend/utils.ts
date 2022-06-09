@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import type ts from "typescript";
-import { __src } from ".";
 import type { SchemaArgument, SchemaField, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/modules/core/graphql/generated/schema";
+import { __src } from "../paths";
 
 export function not<Args extends any[]>(predicate: (...args: Args) => boolean) {
   return (...args: Args) => !predicate(...args);
