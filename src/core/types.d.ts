@@ -9,7 +9,7 @@ declare global {
   }
 
   namespace NodeJS {
-    // TODO: Type this
+    // TODO: Type-check .env
     export interface ProcessEnv {
       DATABASE_URL: string;
       DATABASE_NAME: string;

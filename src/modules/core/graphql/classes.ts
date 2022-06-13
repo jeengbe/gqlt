@@ -9,13 +9,13 @@ const rootInstances: Record<string, any> = {};
 const rootTypes: RootType[] = ["Query", "Mutation"];
 
 // Import all mentioned files into one map
-export async function init() {
+export function init() {
   for (const type of Object.values(schema)) {
     if (type.kind === "type") {
       for (const from of type.from) {
         if (!(from in filesMap)) {
-          // eslint-disable-next-line require-atomic-updates -- Safe to use here - imports are run synchronously, therefore `from in filesMap` always yields the expected result
-          filesMap[from] = await import(`./../../../modules/${from}.js`);
+          // eslint-disable-next-line @typescript-eslint/no-require-imports -- Need this to be synchronous
+          filesMap[from] = require(`./../../../modules/${from}`);
         }
       }
     }

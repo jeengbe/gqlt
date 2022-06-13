@@ -15,7 +15,8 @@ export default async () => {
 
   for (const module of modules) {
     if (fs.existsSync(path.join(module, "scanModules.js"))) {
-      await (await import(path.join(module, "scanModules.js"))).default(modules);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Need this to be synchronous
+      await require(path.join(module, "scanModules.js")).default(modules);
     }
   }
 };

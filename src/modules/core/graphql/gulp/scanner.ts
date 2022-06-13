@@ -1,6 +1,7 @@
+import type { WatchType } from "@gulp/backend/builder";
 import ts from "typescript";
-import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../../src/modules/core/graphql/generated/schema";
-import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "./utils";
+import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "../../../../../gulpfile.ts/backend/utils";
+import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../generated/schema";
 
 export enum UpdateResult {
   /**
@@ -28,7 +29,7 @@ export class Scanner {
   protected sourceFiles: ts.SourceFile[];
 
   constructor(
-    protected watch: ReturnType<typeof ts.createWatchProgram>
+    protected watch: WatchType
   ) {
     // We always provide `Query` and `Mutation`
     this.types = {
