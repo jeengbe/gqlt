@@ -5,9 +5,23 @@
     "strict": true,
     "esModuleInterop": true,
     "sourceMap": true,
-    "outDir": "./../gulpfile.js"
+    "outDir": "../gulpfile.js",
+    "paths": {
+      "@paths": [
+        "./paths"
+      ],
+      "@gulp/*": [
+        "./*"
+      ]
+    },
+    "plugins": [
+      {
+        "transform": "@zerollup/ts-transform-paths"
+      }
+    ]
   },
   "include": [
-    "./**/*"
+    "**/*",
+    "../src/modules/**/gulp/*"
   ]
 }

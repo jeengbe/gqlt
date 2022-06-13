@@ -2,6 +2,7 @@
   "scripts": {
     "w-c": "tsc -w -p gulpfile.ts/tsconfig.json",
     "r-g": "nodemon -w dist -e json,js -d 0.2 dist/core/index.js",
+    "gulp": "tsc gulp.ts --module CommonJS --strict --esModuleInterop --sourceMap && node gulp.js",
     "postinstall": "patch-package"
   },
   "dependencies": {
