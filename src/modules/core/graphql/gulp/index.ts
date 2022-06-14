@@ -110,6 +110,6 @@ function invalidateModuleApiFiles(updateResult: UpdateResult) {
   }
 }
 
-export function setBuilder(bil: Builder) {
+sink("setBuilder", bil => {
   builder = bil;
-}
+});

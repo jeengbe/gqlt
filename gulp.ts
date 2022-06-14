@@ -6,6 +6,8 @@ import ts from "typescript";
 const tsconfigPath = path.resolve(__dirname, "gulpfile.ts", "tsconfig.json");
 const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, ts.sys as unknown as ts.ParseConfigFileHost)!;
 
+const watch = true;
+
 const host = ts.createWatchCompilerHost(
   tsconfigPath,
   tsconfig.options,
@@ -47,7 +49,7 @@ host.afterProgramCreate = (...args: Parameters<Exclude<typeof oldAfterProgramCre
   oldAfterProgramCreate?.(...args);
   void replaceTscAliasPaths({
     configFile: tsconfigPath
-  });
+  }).then(() => watch || process.exit(0));
 };
 
 const oldGetCommonSourceDirectory = ts.getCommonSourceDirectory.bind(ts);

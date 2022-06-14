@@ -1,6 +1,5 @@
 import { parallel } from "gulp";
 import { watch as watchBackend } from "./backend";
-import { watch as watchGulp } from "./gulp";
 import { exec, task } from "./utils";
 
 export const help = task(
@@ -12,11 +11,6 @@ export const help = task(
 export const watch = task(
   parallel(watchBackend),
   "Watch for changes to Arana"
-);
-
-export const gulp = task(
-  parallel(watchGulp),
-  "Watch for changes to gulp"
 );
 
 export default task(help, "Run `help`");

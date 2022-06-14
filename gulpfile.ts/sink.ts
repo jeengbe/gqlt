@@ -21,16 +21,14 @@ export function sink<K extends keyof Sinks>(key: K, value?: Sinks[K]): Sink<K> |
     // We don't actually check whether an array of functions is returned and then determine whether to attach a `.call`
     // This way, we rely solely on TS to ensure that it is only called when supposed to
     if (!(key in sinks)) {
-      return {
-        ...[],
-        call: () => []
-      } as unknown as Sink<K>;
+      const r = [] as unknown as Sink<K>;
+      r.call = () => [];
+      return r;
     }
 
-    return {
-      ...sinks[key],
-      call: (...args: any[]) => sinks[key]!.map((val: (..._: typeof args) => void) => val(...args))
-    } as Sink<K>;
+    const r = sinks[key] as Sink<K>;
+    r.call = (...args: any[]) => sinks[key]!.map((val: (..._: typeof args) => void) => val(...args));
+    return r;
   }
 
   if (key in sinks) {

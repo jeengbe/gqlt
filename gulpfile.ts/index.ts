@@ -9,11 +9,9 @@ import { walkDir } from "@gulp/utils";
 import * as fs from "fs";
 
 walkDir(path.join(__gulpjs, "modules"), (_, __, abs, isDir) => {
-  if (isDir && fs.existsSync(path.join(abs, "module.yml"))) {
-    if (fs.existsSync(path.join(abs, "gulp", "index.js"))) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Need this to be synchronous
-      require(path.join(abs, "gulp"));
-    }
+  if (isDir && fs.existsSync(path.join(abs, "gulp", "index.js"))) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Need this to be synchronous
+    require(path.join(abs, "gulp"));
     return false;
   }
 });

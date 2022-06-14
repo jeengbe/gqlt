@@ -12,6 +12,9 @@
       ],
       "@gulp/*": [
         "./*"
+      ],
+      "@modules/*": [
+        "./../src/modules/*"
       ]
     },
     "plugins": [

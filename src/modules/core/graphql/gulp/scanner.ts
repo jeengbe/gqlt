@@ -1,6 +1,6 @@
 import type { WatchType } from "@gulp/backend/builder";
+import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "@gulp/backend/utils";
 import ts from "typescript";
-import { areTypesEqual, getModuleScopeFileName, isModuleApiFile, isModuleFile, isNodeModule, not, or } from "../../../../../gulpfile.ts/backend/utils";
 import type { Schema, SchemaArgument, SchemaOutputType, SchemaScalar, SchemaType } from "../generated/schema";
 
 export enum UpdateResult {

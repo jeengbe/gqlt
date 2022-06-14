@@ -11,6 +11,30 @@
   "plugins": [
     "@typescript-eslint"
   ],
+  "overrides": [
+    {
+      "files": [
+        "src/modules/**/gulp/*"
+      ],
+      "rules": {
+        "@typescript-eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "..",
+                  "!@gulp/"
+                ],
+                "message": "Code from outside of src/modules/**/gulp directories cannot be used",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
   "rules": {
     // eslint
     // Possible Errors

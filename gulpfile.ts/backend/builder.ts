@@ -10,6 +10,7 @@ import { walkDir } from "../utils";
 
 declare global {
   interface Sinks {
+    setBuilder(builder: Builder): void;
     readFile(fileName: string, content: string | undefined): string | void;
     createProgram(): void;
     afterProgramCreate(watch: WatchType): void;
@@ -45,6 +46,8 @@ export class Builder {
     protected readonly tsconfig: ts.ParsedCommandLine
   ) {
     this.system = ts.sys;
+
+    sink("setBuilder").call(this);
 
     this.host = ts.createWatchCompilerHost(
       tsconfigPath,
