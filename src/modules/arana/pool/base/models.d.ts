@@ -4,7 +4,7 @@ import type { Author } from "./scalars";
 
 export interface IModule extends Document {
   path: string;
-  zip: string;
+  tarball: string;
   name: string;
   description: string;
   version: VersionString;

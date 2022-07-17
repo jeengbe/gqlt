@@ -93,9 +93,7 @@ sink("core/server/middleware", graphqlHTTP({
     query: types.Query,
     mutation: types.Mutation
   }),
-  graphiql: {
-    headerEditorEnabled: true
-  },
+  graphiql: false,
   rootValue: root,
   customFormatErrorFn: (error) => {
     if (!(error.originalError instanceof ValidationError)) {

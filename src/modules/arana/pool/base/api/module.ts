@@ -20,7 +20,7 @@ export class Module extends Type<IModule> {
       _key: data.path.replace(/\//g, "_"),
       name: data.name,
       path: data.path,
-      zip: "",
+      tarball: "",
       description: typeof data.description === "string" ? data.description : "",
       version: data.version,
       authors: "authors" in data ? data.authors : []
@@ -72,11 +72,11 @@ export class Module extends Type<IModule> {
   }
 
   /**
-   * The name of the zip file in which the modules is stored
+   * The name of the tarball file in which the modules is stored
    * @internal
    */
-  getZip() {
-    return this.data.zip;
+  getTarball() {
+    return this.data.tarball;
   }
 
   /**

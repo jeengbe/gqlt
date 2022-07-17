@@ -82,19 +82,19 @@ export class Query {
             return;
           }
 
-          // Place the module into a zipfile for later use
+          // Place the module into a tarball for later use
           let filename;
           do {
-            filename = `${randomHex(12)}.zip`;
+            filename = `${randomHex(12)}.tar`;
           } while (fs.existsSync(path.resolve(_modulesStore, filename)));
 
           fs.rmSync(path.resolve(dir, ".git"), { recursive: true, force: true });
           const dest = fs.createWriteStream(path.resolve(_modulesStore, filename));
-          const archive = createArchive("zip");
+          const archive = createArchive("tar");
           archive.pipe(dest);
           archive.directory(dir, false);
           await archive.finalize();
-          config.zip = filename;
+          config.tarball = filename;
 
           // Create the Module and save it
           let module;
@@ -132,6 +132,6 @@ export class Query {
       REMOVE { _key: ${module.getKey()} } IN modules
     `;
 
-    fs.rmSync(path.resolve(_modulesStore, module.getZip()));
+    fs.rmSync(path.resolve(_modulesStore, module.getTarball()));
   }
 }
