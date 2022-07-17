@@ -11,6 +11,19 @@ export const exec = (command: string, args?: string[], options?: SpawnOptions) =
   return process;
 };
 
+export async function importAll(p: string, awaitDefault = false) {
+  if (fs.existsSync(p)) {
+    await walkDirAsync(p, async (f, __, abs) => {
+      if (f.endsWith(".js") && !f.endsWith(".test.js")) {
+        const i = await import(abs);
+        if (awaitDefault && "default" in i) {
+          await i.default();
+        }
+      }
+    });
+  }
+}
+
 export function randomHex(length = 6) {
   let r = "";
   while (r.length < length) {

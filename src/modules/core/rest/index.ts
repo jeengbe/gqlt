@@ -43,12 +43,27 @@ export abstract class Handler<A> {
   get(_args: A, _res: Response, _req: Request): MaybePromise<GetResponse> {
     return 405;
   }
+
+  handle(req: Request, res: Response, args: A): MaybePromise<void> {
+    res.json(args);
+    return undefined;
+  }
 }
+
+export const routeBlocks: {
+  routes: string[];
+  handler: new () => Handler<any>;
+}[] = [];
 
 export function Route<Route extends string>(route: Route | Route[]) {
   route = Array.isArray(route) ? route : [route];
 
-  return <HandlerArgs>(target: new (...args: any) => Handler<Args<Route>>) => {
-    target;
+  // TODO: Route validation
+
+  return (target: new () => Handler<Args<Route>>) => {
+    routeBlocks.push({
+      routes: route as string[],
+      handler: target
+    });
   };
 }

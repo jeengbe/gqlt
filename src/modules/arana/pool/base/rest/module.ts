@@ -3,10 +3,10 @@ import type { GetResponse } from "@core/rest";
 import { Handler, Route } from "@core/rest";
 import type { Args } from "@core/rest/types";
 import * as path from "path";
-import { Query } from "../../../api";
+import { Query } from "../api";
 
-@Route("/module/:::module/download")
-export default class extends Handler<Args<"/module/:::module/download">> {
+@Route("/modules/:+module/download")
+export class Download extends Handler<Args<"/modules/:+module/download">> {
   async get({ module: modulePath }: typeof this.args): Promise<GetResponse> {
     // 1. permission check
     // 2. module check

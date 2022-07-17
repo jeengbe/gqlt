@@ -11,7 +11,16 @@ export enum Priority {
 }
 
 declare global {
-  interface Sinks { }
+  interface Sinks {
+    /**
+     * Request inclusion of all files in the given directoryf or all modules
+     * @example
+     * ```ts
+     * sink("core/scanModules", "rest"); // Will include all files in rest/ for each module
+     * ```
+     */
+    "core/scanModules": string;
+  }
 }
 
 type Sink<K extends keyof Sinks> =

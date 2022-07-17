@@ -1,4 +1,5 @@
-import { walkDir, walkDirAsync } from "@core/utils";
+import { sink } from "@core/sink";
+import { importAll, walkDir } from "@core/utils";
 import { __modules } from "@paths";
 import * as fs from "fs";
 import * as path from "path";
@@ -13,16 +14,14 @@ export default async () => {
     }
   });
 
+  // Let all modules register their sinks
   for (const module of modules) {
-    if (fs.existsSync(path.join(module, "sinks"))) {
-      await walkDirAsync(path.join(module, "sinks"), async (f, __, abs) => {
-        if (f.endsWith(".js")) {
-          const i = await import(abs);
-          if ("default" in i) {
-            await i.default();
-          }
-        }
-      });
+    await importAll(path.join(module, "sinks"), true);
+  }
+
+  for (const dir of sink("core/scanModules")) {
+    for (const module of modules) {
+      await importAll(path.join(module, dir));
     }
   }
 };

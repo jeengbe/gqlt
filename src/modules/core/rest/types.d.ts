@@ -7,7 +7,7 @@ export type Args<Path> = Path extends (infer Path)[]
   : Path extends `/${infer Rest}`
     ? keyof ArgsWorker<Rest> extends never
       ? Record<string, never>
-      // This is a neat trick to combine all union members into one single object (and make then readonly)
+    // This is a neat trick to combine all union members into one single object (and make then readonly)
       : { readonly [key in keyof ArgsWorker<Rest>]: ArgsWorker<Rest>[key] }
     : "Missing leading slash";
 
@@ -18,10 +18,10 @@ export type ArgsWorker<Path> =
       ? Record<ParseArg<Arg>[0], ParseArg<Arg>[1]>
       : {};
 
-type ParseArg<Arg extends string> = Arg extends `${infer Arg}(${infer _Regex})`
-  ? [Arg, string]
-  : Arg extends `${infer Arg}[${infer Values}]`
-    ? [Arg, Split<Values, "|">[number]] :
-    Arg extends `::${infer Arg}`
-      ? [ParseArg<Arg>[0], ParseArg<Arg>[1][]]
+type ParseArg<Arg extends string> = Arg extends `${infer Arg}[${infer Values}]`
+  ? [Arg, Split<Values, "|">[number]] :
+  Arg extends `*${infer Arg}`
+    ? [Arg, string[]]
+    : Arg extends `+${infer Arg}`
+      ? [Arg, string[]]
       : [Arg, Arg extends "id" ? number : string];
