@@ -1,8 +1,8 @@
 diff --git a/node_modules/typescript/lib/tsserver.js b/node_modules/typescript/lib/tsserver.js
-index 60a159a..63394f4 100644
+index c276781..9cc7d6f 100644
 --- a/node_modules/typescript/lib/tsserver.js
 +++ b/node_modules/typescript/lib/tsserver.js
-@@ -137074,7 +137074,9 @@ var ts;
+@@ -139587,7 +139587,9 @@ var ts;
              "variation",
              "version",
              "virtual",
@@ -14,10 +14,10 @@ index 60a159a..63394f4 100644
          var jsDocTagNameCompletionEntries;
          var jsDocTagCompletionEntries;
 diff --git a/node_modules/typescript/lib/typescript.js b/node_modules/typescript/lib/typescript.js
-index 3be91a8..f51e983 100644
+index e8734a6..6db5885 100644
 --- a/node_modules/typescript/lib/typescript.js
 +++ b/node_modules/typescript/lib/typescript.js
-@@ -121485,8 +121485,8 @@ var ts;
+@@ -123451,8 +123451,8 @@ var ts;
          if (configFileName)
              updateExtendedConfigFilesWatches(toPath(configFileName), compilerOptions, watchOptions, ts.WatchType.ExtendedConfigFile);
          return configFileName ?

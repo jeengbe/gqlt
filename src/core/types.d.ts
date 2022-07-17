@@ -3,6 +3,12 @@ import type { RequestHandler } from "express";
 export type MaybeArray<T> = T | T[];
 export type MaybePromise<T> = T | Promise<T>;
 
+export type Split<S extends string, D extends string> =
+  string extends S ? string[] :
+    S extends "" ? [] :
+      S extends `${infer T}${D}${infer U}` ? [T, ...Split<U, D>] : [S];
+
+
 declare global {
   interface Sinks {
     "core/server/middleware": RequestHandler;

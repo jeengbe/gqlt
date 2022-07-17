@@ -8,6 +8,7 @@ import type { IModule } from "../models";
 import { isAuthor } from "../scalars";
 
 export class Module extends Type<IModule> {
+  // TODO: Refactor this
   static async formatData(data: unknown): Promise<IModule> {
     if (!isRecordUnknown(data)) throw new DataError();
     if (!isString(data.path)) throw new DataError("path");

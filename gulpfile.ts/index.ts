@@ -17,3 +17,4 @@ walkDir(path.join(__gulpjs, "modules"), (_, __, abs, isDir) => {
 });
 
 export * from "./tasks";
+export { default } from "./tasks";

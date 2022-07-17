@@ -10,10 +10,23 @@ import { walkDir } from "../utils";
 
 declare global {
   interface Sinks {
-    setBuilder(builder: Builder): void;
+    /**
+     * Called as soon as a builder instance is created
+     */
+    setBuilder(instance: Builder): void;
+    /**
+     * Used to modify the content of a file\
+     *
+     * @param fileName The file name
+     * @param content The content of the file
+     * @return New content of the file
+     */
     readFile(fileName: string, content: string | undefined): string | void;
     createProgram(): void;
     afterProgramCreate(watch: WatchType): void;
+    /**
+     * @return `false` if should not emit
+     */
     afterProgramRecreate(watch: ts.SemanticDiagnosticsBuilderProgram): boolean | void;
   }
 }

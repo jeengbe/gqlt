@@ -3,7 +3,7 @@ export function isRecordUnknown<K extends keyof any = string>(value: unknown): v
 }
 
 /**
- * @param minLength Minimum array length, allows `undefined` if `false`
+ * @param minLength Minimum array length, allows a value of `undefined` if `false`
  */
 export function isArray<T>(value: unknown, typeGuard = function (val: unknown): val is T {
   return true;

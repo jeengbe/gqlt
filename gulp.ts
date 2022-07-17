@@ -1,10 +1,14 @@
 import fancyLog from "fancy-log";
 import * as path from "path";
+import "source-map-support/register";
 import { replaceTscAliasPaths } from "tsc-alias";
 import ts from "typescript";
 
 const tsconfigPath = path.resolve(__dirname, "gulpfile.ts", "tsconfig.json");
 const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, ts.sys as unknown as ts.ParseConfigFileHost)!;
+
+// Here, we use a custom compiler program to compile all src/modules/*/**gulp/* stuff into gulpfile.js/modules
+// This is done by changing all sourceFile's file names to point to the new location
 
 const watch = true;
 
@@ -52,9 +56,11 @@ host.afterProgramCreate = (...args: Parameters<Exclude<typeof oldAfterProgramCre
   }).then(() => watch || process.exit(0));
 };
 
+// As this value is determined and cached before afterProgramCreate (our file replacement logic) is called, we also need to patch this method
 const oldGetCommonSourceDirectory = ts.getCommonSourceDirectory.bind(ts);
 ts.getCommonSourceDirectory = (...args: Parameters<typeof ts.getCommonSourceDirectory>) => {
   args[0].rootDir = "/home/coder/gqlt/gulpfile.ts";
   return oldGetCommonSourceDirectory(...args);
 };
+
 ts.createWatchProgram(host);

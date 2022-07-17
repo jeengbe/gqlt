@@ -1,3 +1,4 @@
+import type { Args } from "@core/rest/types";
 import type { MaybePromise } from "@core/types";
 import type { Request as Rq, Response as Rp } from "express";
 
@@ -15,7 +16,7 @@ export type Action = {
  * if `number`: http response code\
  * if `string`: response body and assume response code is 200
  */
-export type GetReturn = void | number | {
+export type GetResponse = void | number | {
   /**
    * @default 200
    */
@@ -26,7 +27,7 @@ export type GetReturn = void | number | {
   body?: string;
 } | string | Action;
 
-export abstract class Rest<Args> {
+export abstract class Handler<A> {
   /**
    * @example
    * ```ts
@@ -34,11 +35,20 @@ export abstract class Rest<Args> {
    *  get({ path: pathArg }: typeof this.args): GetReturn { ... }
    * }
    * ```
+   * **DO NOT USE**\
+   * This is only used for inferring the args type in request handlers.
    */
-  // @ts-expect-error -- Somewhat of a hack for easy args inference in handlers. We never use this, hence the error.
-  readonly args: Args;
+  declare readonly args: A;
 
-  get(_args: Args, _res: Response, _req: Request): MaybePromise<GetReturn> {
+  get(_args: A, _res: Response, _req: Request): MaybePromise<GetResponse> {
     return 405;
   }
+}
+
+export function Route<Route extends string>(route: Route | Route[]) {
+  route = Array.isArray(route) ? route : [route];
+
+  return <HandlerArgs>(target: new (...args: any) => Handler<Args<Route>>) => {
+    target;
+  };
 }
