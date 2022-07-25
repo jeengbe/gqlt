@@ -1,3 +1,0 @@
-dependsOn:
-  - arana/utils
-  - arana/pool/base
