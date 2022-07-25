@@ -1,0 +1,4 @@
+dependsOn:
+  - core/rest
+  - core/graphql
+  - arana/utils
