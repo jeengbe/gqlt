@@ -1,4 +1,3 @@
-import type { RequestHandler } from "express";
 
 export type MaybeArray<T> = T | T[];
 export type MaybePromise<T> = T | Promise<T>;
@@ -10,10 +9,6 @@ export type Split<S extends string, D extends string> =
 
 
 declare global {
-  interface Sinks {
-    "core/server/middleware": RequestHandler;
-  }
-
   namespace NodeJS {
     // TODO: Type-check .env
     export interface ProcessEnv {

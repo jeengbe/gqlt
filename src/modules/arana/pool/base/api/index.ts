@@ -65,9 +65,9 @@ export class Query {
           // Parse and check module config
           let config;
           try {
-            if (!fs.existsSync(path.resolve(dir, "module.yml"))) throw new Error();
-            config = parseYaml(fs.readFileSync(path.resolve(dir, "module.yml"), "utf-8")) as Record<string, unknown> | null;
-            if (!(typeof config === "object" && config && "path" in config && typeof config.path === "string")) throw new Error();
+            if (!fs.existsSync(path.join(dir, "module.yml"))) throw new Error("Missing module.yml");
+            config = parseYaml(fs.readFileSync(path.join(dir, "module.yml"), "utf-8")) as Record<string, unknown> | null;
+            if (!(typeof config === "object" && config && "path" in config && typeof config.path === "string")) throw new Error("Invalid module.yml");
             config = await Module.formatData(config);
           } catch (e) {
             if (e instanceof DataError) {

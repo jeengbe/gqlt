@@ -24,6 +24,10 @@ export async function importAll(p: string, awaitDefault = false) {
   }
 }
 
+export function makeArray<T>(x: T | T): T[] {
+  return Array.isArray(x) ? x : [x];
+}
+
 export function randomHex(length = 6) {
   let r = "";
   while (r.length < length) {

@@ -25,3 +25,16 @@ export default async () => {
     }
   }
 };
+
+declare global {
+  interface Sinks {
+    /**
+     * Request inclusion of all files in the given directory for all modules at setup
+     * @example
+     * ```ts
+     * sink("core/scanModules", "rest"); // Will include all files in rest/ for all modules
+     * ```
+     */
+    "core/scanModules": string;
+  }
+}

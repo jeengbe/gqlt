@@ -1,4 +1,4 @@
-import { Priority, sink } from "@core/sink";
+import { sink } from "@core/sink";
 import { ValidationError } from "@core/utils";
 import { graphqlHTTP } from "express-graphql";
 import * as fs from "fs";
@@ -88,18 +88,21 @@ for (const name in schema) {
 
 initClasses();
 
-sink("core/server/middleware", graphqlHTTP({
-  schema: new GraphQLSchema({
-    query: types.Query,
-    mutation: types.Mutation
-  }),
-  graphiql: false,
-  rootValue: root,
-  customFormatErrorFn: (error) => {
-    if (!(error.originalError instanceof ValidationError)) {
-      console.log(error);
+sink("core/server/middleware", [
+  "/graphql",
+  graphqlHTTP({
+    schema: new GraphQLSchema({
+      query: types.Query,
+      mutation: types.Mutation
+    }),
+    graphiql: false,
+    rootValue: root,
+    customFormatErrorFn: (error) => {
+      if (!(error.originalError instanceof ValidationError)) {
+        console.log(error);
+      }
+      return error;
     }
-    return error;
-  }
-  // This needs lowest priority as it catches all routes
-}), Priority.LOWEST);
+    // This needs lowest priority as it catches all routes
+  })
+]);

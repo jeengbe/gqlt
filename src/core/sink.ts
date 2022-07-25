@@ -11,16 +11,7 @@ export enum Priority {
 }
 
 declare global {
-  interface Sinks {
-    /**
-     * Request inclusion of all files in the given directoryf or all modules
-     * @example
-     * ```ts
-     * sink("core/scanModules", "rest"); // Will include all files in rest/ for each module
-     * ```
-     */
-    "core/scanModules": string;
-  }
+  interface Sinks { }
 }
 
 type Sink<K extends keyof Sinks> =
@@ -53,7 +44,7 @@ export function sink<K extends keyof Sinks>(key: K, value?: Sinks[K], priority?:
   if (key in sinks) {
     sinks[key]!.push({ value, priority: priority ?? Priority.DEFAULT });
   } else {
-    // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error -- Read the below comment first. But for reasons, this only seems to be the case some times, which is why we can't always @ts-expect-error
+    // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error -- For some reason, the following line only errors in particular environments, which is why we can't @ts-expect-error
     // @ts-ignore -- Weirdly, for reasons I don't understand, this line appears not to be valid
     sinks[key] = [{ value, priority: priority ?? Priority.DEFAULT }];
   }
