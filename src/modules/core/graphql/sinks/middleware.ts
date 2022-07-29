@@ -93,7 +93,7 @@ sink("core/server/middleware", [
   graphqlHTTP({
     schema: new GraphQLSchema({
       query: types.Query,
-      mutation: types.Mutation
+      mutation: Object.keys(types.Mutation.getFields()).length ? types.Mutation : undefined
     }),
     graphiql: false,
     rootValue: root,
@@ -103,6 +103,5 @@ sink("core/server/middleware", [
       }
       return error;
     }
-    // This needs lowest priority as it catches all routes
   })
 ]);
