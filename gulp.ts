@@ -10,7 +10,7 @@ const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, ts.sys as
 // Here, we use a custom compiler program to compile all src/modules/*/**gulp/* stuff into gulpfile.js/modules
 // This is done by changing all sourceFile's file names to point to the new location
 
-const watch = true;
+const watch = false;
 
 const host = ts.createWatchCompilerHost(
   tsconfigPath,
