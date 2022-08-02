@@ -114,14 +114,6 @@ const timestamps = {
   updatedAt: date
 };
 
-const x = () => ({
-  y: x
-});
-
-declare const z: Parse<typeof x>;
-z.y.y.y.y.
-
-
 type Flag<Of, Flags> =
   "array" extends Flags ? Parse<Of>[] :
   "optional" extends Flags ? Parse<Of> | undefined :
