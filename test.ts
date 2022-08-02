@@ -26,8 +26,8 @@ type Guards<Flags extends string = never> = {
 };
 
 function relationOrGuardToGuard<Of>(val: GuardOrSchema<Of>): Guard<Of> {
-  if (typeof val === "object" && guardSymbol in val) {
-    return val as unknown as Guard<Of>;
+  if (typeof val === "function" && guardSymbol in val) {
+    return val as Guard<Of>;
   }
   return _relation(val);
 }
@@ -114,20 +114,27 @@ const timestamps = {
   updatedAt: date
 };
 
+const x = () => ({
+  y: x
+});
+
+declare const z: Parse<typeof x>;
+z.y.y.y.y.
+
 
 type Flag<Of, Flags> =
   "array" extends Flags ? Parse<Of>[] :
-    "optional" extends Flags ? Parse<Of> | undefined :
-      Of;
+  "optional" extends Flags ? Parse<Of> | undefined :
+  Of;
 
 type Parse<T> = T extends () => infer U ? Parse<U> :
   T extends Guard<infer Of, infer Flags>
-    ? Flag<Of, Flags>
-    : T extends { [scalarSymbol]: infer Scalar; }
-      ? T
-      : T extends Record<string, any>
-        ? { [K in keyof T]: Parse<T[K]> }
-        : T;
+  ? Flag<Of, Flags>
+  : T extends { [scalarSymbol]: infer Scalar; }
+  ? T
+  : T extends Record<string, any>
+  ? { [K in keyof T]: Parse<T[K]> }
+  : T;
 
 
 export type LocationModel = Parse<typeof Location>;
