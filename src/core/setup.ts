@@ -4,7 +4,7 @@ import { __modules } from "@paths";
 import * as fs from "fs";
 import * as path from "path";
 
-export default async () => {
+export const setup = async () => {
   const modules: string[] = [];
 
   walkDir(__modules, (_, __, abs, isDir) => {

@@ -59,6 +59,5 @@ export function areTypesEqual(typeA: CompareType, typeB: CompareType): boolean {
   const b = typeB as CompareSchemaType;
   if (a.kind !== b.kind) return false;
 
-  // Type-wise, this is absolute bs as it merely covers a fraction of all possible combinations. Nevertheless, works in runtime
-  return (Object.keys(a) as (keyof typeof a)[]).every(key => areTypesEqual(a[key], b[key]));
+  return Object.keys(a).every(key => areTypesEqual(a[key as keyof typeof a], b[key as keyof typeof a]));
 }

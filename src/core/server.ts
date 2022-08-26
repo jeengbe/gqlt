@@ -4,7 +4,7 @@ import cors from "cors";
 import type { RequestHandler } from "express";
 import express from "express";
 
-export default () => {
+export const server = () => {
   const app = express();
 
   app.use(cors());
@@ -17,7 +17,7 @@ export default () => {
 declare global {
   interface Sinks {
     /**
-     * Either middleware or if tuple, the first element is the path, the second is the middleware
+     * Either middleware or if tuple, the first element is the path to listen on, the second is the middleware
      */
     "core/server/middleware": RequestHandler | [string, RequestHandler];
   }

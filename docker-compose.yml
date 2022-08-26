@@ -2,7 +2,7 @@ version: "3.8"
 
 networks:
   arango:
-   external: false
+    external: false
 
 services:
   arangodb:
@@ -14,7 +14,7 @@ services:
     networks:
       - arango
     volumes:
-     - arangodb:/var/lib/arangodb3
+      - arangodb:/var/lib/arangodb3
 
 volumes:
   arangodb:

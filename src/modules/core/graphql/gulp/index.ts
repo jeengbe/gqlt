@@ -58,7 +58,7 @@ sink("afterProgramRecreate", program => {
       ...updatedFiles.map(file => scanner.refreshTypes(program.getSourceFile(file))),
       UpdateResult.NOTHING
     );
-    let diagnostic = null;
+    let diagnostic: string | null = null;
     switch (result) {
       case UpdateResult.SCHEMA:
         diagnostic = "Only schema changed.";

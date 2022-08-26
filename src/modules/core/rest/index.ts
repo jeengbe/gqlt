@@ -64,6 +64,7 @@ export abstract class Handler<A> {
         res.status(a.code ?? 200).json(a.body);
         break;
       case "download":
+        // This ! is okay, because if `a.filename` is undefined, JavaScript will choose a different overload, which TypeScript does not realize
         res.download(a.path, a.filename!);
         break;
     }
