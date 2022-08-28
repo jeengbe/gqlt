@@ -1,7 +1,6 @@
 /dist
 /node_modules
 /gulpfile.js
-/gulp.js*
 /temp
 /files
 /.env

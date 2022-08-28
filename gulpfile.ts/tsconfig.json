@@ -1,10 +1,6 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "target": "ESNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "sourceMap": true,
     "outDir": "../gulpfile.js",
     "paths": {
       "@paths": [
@@ -17,11 +13,6 @@
         "./../src/modules/*"
       ]
     },
-    "plugins": [
-      {
-        "transform": "@zerollup/ts-transform-paths"
-      }
-    ]
   },
   "include": [
     "**/*",

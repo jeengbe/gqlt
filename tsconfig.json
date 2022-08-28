@@ -3,8 +3,6 @@
     "target": "ESNext",
     "module": "CommonJS",
     "strict": true,
-    "rootDir": ".",
-    "baseUrl": ".",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "experimentalDecorators": true,

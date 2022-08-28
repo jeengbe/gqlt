@@ -1,16 +1,8 @@
 {
-  // For some reason, this is broken
-  // "extends": "../tsconfig.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "CommonJS",
-    "strict": true,
     "rootDir": ".",
     "baseUrl": ".",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "sourceMap": true,
     "outDir": "./../dist",
     "paths": {
       "@paths": [
@@ -36,12 +28,9 @@
         "./modules/core/graphql/classes"
       ]
     },
-    "plugins": [
-      {
-        "transform": "@zerollup/ts-transform-paths"
-      }
-    ],
-    "types": ["node", "jest"]
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "./**/*",
@@ -49,6 +38,7 @@
   ],
   "exclude": [
     "./node_modules",
-    "./modules/**/gulp/*"
+    "./modules/**/gulp/*",
+    // "./**/__tests__/**/*" // See note in ./tsconfig.test.json
   ]
 }

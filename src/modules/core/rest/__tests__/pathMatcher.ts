@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { routeMatches } from "@core/rest/sinks/middleware";
 
 describe("Rest router matcher", () => {

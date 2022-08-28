@@ -10,8 +10,6 @@ const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, ts.sys as
 // Here, we use a custom compiler program to compile all src/modules/*/**gulp/* stuff into gulpfile.js/modules
 // This is done by changing all sourceFile's file names to point to the new location
 
-const watch = false as boolean;
-
 const host = ts.createWatchCompilerHost(
   tsconfigPath,
   tsconfig.options,
@@ -53,7 +51,7 @@ host.afterProgramCreate = (...args: Parameters<Exclude<typeof oldAfterProgramCre
   oldAfterProgramCreate?.(...args);
   void replaceTscAliasPaths({
     configFile: tsconfigPath
-  }).then(() => watch || process.exit(0));
+  });
 };
 
 // As this value is determined and cached before afterProgramCreate (our file replacement logic) is called, we also need to patch this method

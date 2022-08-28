@@ -1,0 +1,13 @@
+{
+  // Unfortunately, TS does not (yet?) work with multiple tsconfig files and this is more of a placeholder config
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node",
+      "jest"
+    ]
+  },
+  "include": [
+    "./**/__tests__/**/*",
+  ],
+}

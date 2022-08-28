@@ -33,6 +33,23 @@
           }
         ]
       }
+    },
+    {
+      "files": [
+        "**/__tests__/**/*"
+      ],
+      "rules": {
+        "spaced-comment": [
+          "error",
+          "always",
+          {
+            "markers": [
+              "/"
+            ]
+          }
+        ],
+        "@typescript-eslint/triple-slash-reference": "off"
+      }
     }
   ],
   "rules": {
