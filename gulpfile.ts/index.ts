@@ -9,7 +9,7 @@ process.chdir(path.resolve(__dirname, ".."));
 import "dotenv/config";
 
 import { __gulpjs } from "@gulp/paths";
-import { walkDir } from "@gulp/utils";
+import { exec, task, walkDir } from "@gulp/utils";
 import * as fs from "fs";
 
 walkDir(path.join(__gulpjs, "modules"), (_, __, abs, isDir) => {
@@ -20,5 +20,7 @@ walkDir(path.join(__gulpjs, "modules"), (_, __, abs, isDir) => {
   }
 });
 
+export const help = task(() => exec("gulp", ["--tasks", "--depth", "1"]), "List all top-level tasks");
+export default help;
+
 export * from "./tasks";
-export { default } from "./tasks";

@@ -54,10 +54,7 @@ sink("afterProgramRecreate", program => {
   let result;
   try {
     // Scan only files that changed since last compilation (=scan) and add ✨ custom diagnostic messages ✨
-    result = Math.max(
-      ...updatedFiles.map(file => scanner.refreshTypes(program.getSourceFile(file))),
-      UpdateResult.NOTHING
-    );
+    result = Math.max(...updatedFiles.map(file => scanner.refreshTypes(program.getSourceFile(file))), UpdateResult.NOTHING);
     let diagnostic: string | null = null;
     switch (result) {
       case UpdateResult.SCHEMA:
@@ -76,8 +73,9 @@ sink("afterProgramRecreate", program => {
       return;
     }
     throw e;
+  } finally {
+    updatedFiles = [];
   }
-  updatedFiles = [];
 
   // If nothing changed since last compilation, emit
   if (result !== UpdateResult.NOTHING) {
