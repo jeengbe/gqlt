@@ -1,4 +1,3 @@
-import { formatHost } from "@gulp/utils";
 import fancyLog from "fancy-log";
 import * as fs from "fs";
 import * as path from "path";
@@ -7,6 +6,7 @@ import ts from "typescript";
 import { __dist, __src } from "../paths";
 import { sink } from "../sink";
 import { walkDir } from "../utils";
+import type { WatchType } from "./utils";
 
 declare global {
   interface Sinks {
@@ -15,7 +15,7 @@ declare global {
      */
     setBuilder(instance: Builder): void;
     /**
-     * Used to modify the content of a file\
+     * Used to modify the content of a file
      *
      * @param fileName The file name
      * @param content The content of the file
@@ -31,34 +31,27 @@ declare global {
   }
 }
 
-interface FilePresentOnHost {
-  version: string;
-  sourceFile: ts.SourceFile;
-  fileWatcher: ts.FileWatcher;
-}
-type FileMissingOnHost = false;
-interface FilePresenceUnknownOnHost {
-  version: false;
-  fileWatcher?: ts.FileWatcher;
-}
-type HostFileInfo = FilePresentOnHost | FileMissingOnHost | FilePresenceUnknownOnHost;
-
-export type WatchType = InstanceType<typeof Builder>["watch"];
-
 export class Builder {
   protected readonly host: ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>;
   protected readonly system: ts.System;
-  protected readonly watch: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> & { sourceFilesCache: Map<string, HostFileInfo>; synchronizeProgram(): void; };
+  protected watch?: WatchType;
 
-  protected readonly oldReadFile: typeof this.host["readFile"];
-  protected readonly oldCreateProgram: typeof this.host["createProgram"];
-  protected readonly oldAfterProgramCreate: typeof this.host["afterProgramCreate"];
+  protected readonly oldReadFile: typeof this.host.readFile;
+  protected readonly oldCreateProgram: typeof this.host.createProgram;
+  protected readonly oldAfterProgramCreate: typeof this.host.afterProgramCreate;
 
   constructor(
-    protected readonly tsconfigPath: string,
-    protected readonly tsconfig: ts.ParsedCommandLine
+    protected readonly tsconfigPath: string
   ) {
     this.system = ts.sys;
+
+    const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, {
+      ...this.system,
+      onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+        this.reportDiagnostic(diagnostic);
+        process.exit(1);
+      }
+    })!;
 
     sink("setBuilder").call(this);
 
@@ -74,21 +67,23 @@ export class Builder {
       this.reportWatchStatus.bind(this)
     );
 
-    // We patch these, so we need a reference to their original
+    // We patch these, so we need to store a reference to their originals
     this.oldReadFile = this.host.readFile.bind(this.host);
     this.host.readFile = this.readFile.bind(this);
     this.oldCreateProgram = this.host.createProgram.bind(this.host);
     this.host.createProgram = this.createProgram.bind(this);
     this.oldAfterProgramCreate = this.host.afterProgramCreate?.bind(this.host);
     this.host.afterProgramCreate = this.afterProgramCreate.bind(this);
+  }
 
+  public run() {
     // This cast is ok as we patch TS to expose the extra variables and methods
-    this.watch = ts.createWatchProgram(this.host) as any;
+    this.watch = ts.createWatchProgram(this.host) as WatchType;
 
     sink("afterProgramCreate").call(this.watch);
   }
 
-  protected readFile(...args: Parameters<typeof this.oldReadFile>) {
+  protected readFile: typeof this.oldReadFile = (...args) => {
     const [fileName] = args;
 
     return sink("readFile").reduce((prev, fn) => {
@@ -98,27 +93,28 @@ export class Builder {
       }
       return prev;
     }, this.oldReadFile(...args));
-  }
+  };
 
-  protected createProgram(...args: Parameters<typeof this.oldCreateProgram>) {
+  protected createProgram: typeof this.oldCreateProgram = (...args) => {
     sink("createProgram").call();
 
     return this.oldCreateProgram(...args);
-  }
+  };
 
-  protected afterProgramCreate(...args: Parameters<Exclude<typeof this.oldAfterProgramCreate, undefined>>) {
+  protected afterProgramCreate: NonNullable<typeof this.oldAfterProgramCreate> = (...args) => {
     const [program] = args;
 
     if (sink("afterProgramRecreate").call(program).every(v => v !== false)) {
       this.oldAfterProgramCreate?.(...args);
-      this.afterEmit(program);
+      this.afterEmit();
     }
-  }
+  };
 
-  protected afterEmit(program: ts.SemanticDiagnosticsBuilderProgram) {
+  protected afterEmit() {
     void replaceTscAliasPaths({
       configFile: this.tsconfigPath
     });
+
     let copied = 0;
     walkDir(__src, (f, rel, abs) => {
       if (f.endsWith(".yml")) {
@@ -126,12 +122,23 @@ export class Builder {
         copied++;
       }
     });
-    this.reportWatchStatus(`Copied ${copied} extra file${copied === 1 ? "" : "s"}.`);
+    this.reportWatchStatus(`Copied ${copied} .yml file${copied === 1 ? "" : "s"}.`);
   }
 
-  protected reportDiagnostic(diagnostic: ts.Diagnostic): void {
-    console.error(ts.formatDiagnostic(diagnostic, formatHost));
-  }
+  protected reportDiagnostic: ts.DiagnosticReporter = (diagnostic) => {
+    const log = {
+      [ts.DiagnosticCategory.Error]: fancyLog.error.bind(fancyLog),
+      [ts.DiagnosticCategory.Warning]: fancyLog.warn.bind(fancyLog),
+      [ts.DiagnosticCategory.Message]: fancyLog.info.bind(fancyLog),
+      [ts.DiagnosticCategory.Suggestion]: fancyLog.info.bind(fancyLog)
+    }[diagnostic.category];
+
+    log(ts.formatDiagnostic(diagnostic, {
+      getCanonicalFileName: ts.identity,
+      getCurrentDirectory: this.system.getCurrentDirectory.bind(this.system),
+      getNewLine: () => this.system.newLine
+    }));
+  };
 
   public reportWatchStatus(diagnostic: ts.Diagnostic | string): void {
     fancyLog(typeof diagnostic === "string" ? diagnostic : diagnostic.messageText);

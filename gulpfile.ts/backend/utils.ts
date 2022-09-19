@@ -61,3 +61,17 @@ export function areTypesEqual(typeA: CompareType, typeB: CompareType): boolean {
 
   return Object.keys(a).every(key => areTypesEqual(a[key as keyof typeof a], b[key as keyof typeof a]));
 }
+
+interface FilePresentOnHost {
+  version: string;
+  sourceFile: ts.SourceFile;
+  fileWatcher: ts.FileWatcher;
+}
+type FileMissingOnHost = false;
+interface FilePresenceUnknownOnHost {
+  version: false;
+  fileWatcher?: ts.FileWatcher;
+}
+type HostFileInfo = FilePresentOnHost | FileMissingOnHost | FilePresenceUnknownOnHost;
+
+export type WatchType = ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> & { sourceFilesCache: Map<string, HostFileInfo>; synchronizeProgram(): void; };

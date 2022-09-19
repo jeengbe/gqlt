@@ -1,7 +1,6 @@
 import { spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import ts from "typescript";
 import type Undertaker from "undertaker";
 
 export const task = (fn: (...args: any[]) => any, description?: string, flags?: Undertaker.TaskFlags, displayName?: string): Undertaker.TaskFunction => {
@@ -31,10 +30,4 @@ const walkDirWorker = (dir: string, cb: (fileName: string, relativePath: string,
       walkDirWorker(dir, cb, recursive, [...sub, file]);
     }
   }
-};
-
-export const formatHost: ts.FormatDiagnosticsHost = {
-  getCanonicalFileName: ts.identity,
-  getCurrentDirectory: ts.sys.getCurrentDirectory.bind(ts.sys),
-  getNewLine: () => ts.sys.newLine
 };

@@ -9,22 +9,13 @@ import ts from "typescript";
 // This file is used to build the gulpfile.js folder
 // The reason we need a script for that is that we need to consider all modules that add stuff to the gulpfile
 // We pretend that /src/modules/**/gulp/* actually lives in /gulpfile.ts/modules/**/gulp/*
+// This is done by changing all sourceFiles' file names to point to the new location
 
 const tsconfigPath = path.resolve(__dirname, "..", "gulpfile.ts", "tsconfig.json");
-const tsconfig = ts.getParsedCommandLineOfConfigFile(tsconfigPath, {}, {
-  onUnRecoverableConfigFileDiagnostic: diag => {
-    fancyLog.error(diag.messageText);
-    process.exit(1);
-  },
-  ...ts.sys
-})!;
-
-// Here, we use a custom compiler program to compile all src/modules/*/**gulp/* stuff into gulpfile.js/modules
-// This is done by changing all sourceFile's file names to point to the new location
 
 const host = ts.createWatchCompilerHost(
   tsconfigPath,
-  tsconfig.options,
+  {},
   ts.sys,
   ts.createSemanticDiagnosticsBuilderProgram,
   diag => ts.formatDiagnostic(diag, {
@@ -32,13 +23,22 @@ const host = ts.createWatchCompilerHost(
     getCurrentDirectory: ts.sys.getCurrentDirectory.bind(ts.sys),
     getNewLine: () => ts.sys.newLine
   }),
-  diag => fancyLog(diag.messageText)
+  diag => {
+    const log = {
+      [ts.DiagnosticCategory.Error]: fancyLog.error.bind(fancyLog),
+      [ts.DiagnosticCategory.Warning]: fancyLog.warn.bind(fancyLog),
+      [ts.DiagnosticCategory.Message]: fancyLog.info.bind(fancyLog),
+      [ts.DiagnosticCategory.Suggestion]: fancyLog.info.bind(fancyLog)
+    }[diag.category];
+
+    log(diag.messageText);
+  }
 );
 
 // TODO: Update paths to work in all environments
 
 const oldAfterProgramCreate = host.afterProgramCreate?.bind(host);
-host.afterProgramCreate = (...[program]: Parameters<NonNullable<typeof oldAfterProgramCreate>>) => {
+host.afterProgramCreate = (...[program]) => {
   // Force TS to emit all module related stuff from src/modules into gulpfile.js/modules
   const oldEmit = program.emit.bind(program);
   program.emit = (...emitArgs: Parameters<typeof oldEmit>) => {
@@ -51,7 +51,7 @@ host.afterProgramCreate = (...[program]: Parameters<NonNullable<typeof oldAfterP
       }
     }
 
-    fs.rmSync(path.resolve(__dirname, "..", "gulpfile.js"), { recursive: true });
+    fs.rmSync(path.resolve(__dirname, "..", "gulpfile.js"), { recursive: true, force: true });
     const r = oldEmit(...emitArgs);
 
     // Revert changes to file names
@@ -67,7 +67,7 @@ host.afterProgramCreate = (...[program]: Parameters<NonNullable<typeof oldAfterP
 
 // As this value is determined and cached before afterProgramCreate (our file replacement logic) is called, we also need to patch this method
 const oldGetCommonSourceDirectory = ts.getCommonSourceDirectory.bind(ts);
-ts.getCommonSourceDirectory = (...getCommonSourceDirectoryArgs: Parameters<typeof ts.getCommonSourceDirectory>) => {
+ts.getCommonSourceDirectory = (...getCommonSourceDirectoryArgs) => {
   getCommonSourceDirectoryArgs[0].rootDir = path.resolve(__dirname, "..", "gulpfile.ts");
   return oldGetCommonSourceDirectory(...getCommonSourceDirectoryArgs);
 };
