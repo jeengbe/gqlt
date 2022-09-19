@@ -378,7 +378,7 @@ export class Scanner {
           return fields;
         }, {}));
 
-        // If we contribute fields, we are entitled to a mention if the type's `from` list
+        // If we contribute fields, we are entitled to a mention in the type's `from` list
         if (Object.keys(type.fields).length || Object.keys(type.staticFields).length) {
           if (!oldType.from.includes(moduleFileName)) {
             oldType.from.push(moduleFileName);
